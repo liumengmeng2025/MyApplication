@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 标题 -->
+
+    <!-- 搜索和排序区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="1dp"
+        android:background="#e0e0e0"
+        android:orientation="vertical"
+        android:padding="7dp">
+
+        <!-- 包数精确搜索 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etPackageSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="1dp"
+                android:layout_weight="1"
+                android:hint="输入区域"
+                android:textSize="12sp"
+                android:inputType="text" />
+
+            <Button
+                android:id="@+id/btnSearchPackage"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_weight="1"
+                android:text="2.搜索区域"
+                android:backgroundTint="#FF0000"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- 排序按钮和加载所有按钮 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnLoadAll"
+                android:layout_width="52dp"
+                android:layout_height="35dp"
+                android:layout_weight="1"
+                android:backgroundTint="#2196F3"
+                android:text="1.加载所有明细"
+                android:textSize="10sp" />
+
+            <Button
+                android:id="@+id/btnSortByLocation"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_marginEnd="2dp"
+                android:layout_weight="1"
+                android:backgroundTint="#607D8B"
+                android:text="3.按库位排序"
+                android:textSize="10sp" />
+
+            <Button
+                android:id="@+id/btnSortByQuantity"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_marginEnd="2dp"
+                android:layout_weight="1"
+                android:backgroundTint="#795548"
+                android:text="3.按数量降序"
+                android:textSize="10sp" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 分页控件 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="2dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvPageInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="0dp"
+            android:text="无数据"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnPrevPage"
+            android:layout_width="47dp"
+            android:layout_height="31dp"
+            android:layout_marginEnd="0dp"
+            android:backgroundTint="#4CAF50"
+            android:text="上页"
+            android:textSize="10sp" />
+
+        <Button
+            android:id="@+id/btnNextPage"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="0dp"
+            android:backgroundTint="#4CAF50"
+            android:text="下页"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- 加载提示 -->
+    <TextView
+        android:id="@+id/tvLoading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="正在加载数据..."
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:gravity="center"
+        android:layout_marginBottom="2dp"/>
+
+    <!-- 表格区域 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TableLayout
+            android:id="@+id/tableLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stretchColumns="*">
+
+            <!-- 表头 -->
+            <TableRow
+                android:background="#DDDDDD">
+
+                <TextView
+                    android:layout_height="match_parent"
+                    android:padding="5dp"
+                    android:text="货号"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:text="数量"
+                    android:padding="5dp"
+                    android:textStyle="bold"
+                    android:textSize="10sp"/>
+                <TextView
+                    android:text="区域"
+                    android:padding="5dp"
+                    android:textStyle="bold"
+                    android:textSize="10sp"/>
+                <TextView
+                    android:text="库位"
+                    android:padding="5dp"
+                    android:textStyle="bold"
+                    android:textSize="10sp"/>
+            </TableRow>
+        </TableLayout>
+    </ScrollView>
+
+</LinearLayout>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
+
+        <!-- 导航界面 (主菜单) -->
+        <activity
+            android:name=".MainMenuActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 新添加的部门选择Activity -->
+        <activity
+            android:name=".ReceivingDepartmentActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DistributionDepartmentActivity"
+            android:exported="false" />
+
+        <!-- 查询界面 -->
+        <activity
+            android:name=".QueryActivity"
+            android:exported="false" />
+
+        <!-- 明细界面 -->
+        <activity
+            android:name=".DetailActivity"
+            android:exported="false" />
+
+        <!-- 分货界面 -->
+        <activity
+            android:name=".DistributionActivity"
+            android:exported="false" />
+
+        <!-- 新添加的Activity -->
+        <!-- 收货界面 -->
+        <activity
+            android:name=".ReceivingActivity"
+            android:exported="false" />
+        <!-- 绑定区域界面 -->
+        <activity
+            android:name=".BindAreaActivity"
+            android:exported="false" />
+        <!-- 查询库位界面 -->
+        <activity
+            android:name=".QueryLocationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CabinetFlowActivity"
+            android:exported="false"/>
+        <activity
+            android:name=".AreaQueryActivity"
+            android:exported="false"/>
+        <activity
+            android:name=".CabinetWithdrawActivity"
+            android:exported="false" />
+
+    </application>
+</manifest>

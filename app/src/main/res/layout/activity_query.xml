@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 扫描输入 -->
+    <EditText
+        android:id="@+id/etBarcode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="扫描商品货号"
+        android:imeOptions="actionDone"
+        android:inputType="text"/>
+
+    <!-- 查询按钮 -->
+    <Button
+        android:id="@+id/btnQuery"
+        android:layout_width="match_parent"
+        android:backgroundTint="#795548"
+        android:layout_height="wrap_content"
+        android:text="查询"/>
+
+    <!-- 数据表格 -->
+    <TableLayout
+        android:id="@+id/tableLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:stretchColumns="*">
+
+        <TableRow
+            android:background="#DDDDDD">
+            <TextView android:text="货号" android:padding="8dp"/>
+            <TextView android:text="数量" android:padding="8dp"/>
+            <TextView android:text="区域" android:padding="8dp"/>
+            <TextView android:text="库位" android:padding="8dp"/>
+
+
+
+        </TableRow>
+    </TableLayout>
+
+    <!-- 删除按钮 -->
+    <Button
+        android:id="@+id/btnDelete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="删除记录"
+        android:backgroundTint="#FF0000"/>
+</LinearLayout>

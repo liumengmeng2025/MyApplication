@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <!-- 搜索栏 + 功能按钮 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="22dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:hint="输入商品货号或板标"
+            android:inputType="text"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnUnbind"
+            android:layout_width="140dp"
+            android:layout_height="40dp"
+            android:backgroundTint="#FF0000"
+            android:text="批量解绑"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- 新增：区域查询按钮行 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="0dp">
+
+        <Button
+            android:id="@+id/btnByProduct"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="10dp"
+            android:backgroundTint="#4CAF50"
+            android:text="按商品查"
+            android:textSize="10sp" />
+
+        <Button
+            android:id="@+id/btnByPlate"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="0dp"
+            android:backgroundTint="#2196F3"
+            android:text="按板标查"
+            android:textSize="10sp" />
+
+        <Button
+            android:id="@+id/btnCabinetQuery"
+            android:layout_width="110dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="0dp"
+            android:backgroundTint="#FF9800"
+            android:text="装柜查询"
+            android:textSize="10sp" />
+    </LinearLayout>
+    <!-- 在现有的按钮行下面添加装柜数据查询按钮 -->
+
+
+
+    <!-- 明细列表（无顶端标题行） -->
+    <ListView
+        android:id="@+id/lvItems"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:dividerHeight="2dp"/>
+
+</LinearLayout>

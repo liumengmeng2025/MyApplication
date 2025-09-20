@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:background="@drawable/item_border"> <!-- 引用边框样式 -->
+
+    <!-- 第一行：商品 + 板标 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- 商品（占比60%） -->
+        <TextView
+            android:id="@+id/tvProduct"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.6"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#333333"/>
+
+        <!-- 板标（占比40%） -->
+        <TextView
+            android:id="@+id/tvPlate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.4"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:gravity="end"/>
+    </LinearLayout>
+
+    <!-- 第二行：区域 + 时间 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+
+        <!-- 区域 -->
+        <TextView
+            android:id="@+id/tvArea"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"/>
+
+        <!-- 时间（靠右显示） -->
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:gravity="end"/>
+    </LinearLayout>
+
+</LinearLayout>
