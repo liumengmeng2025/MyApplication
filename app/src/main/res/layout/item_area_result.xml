@@ -4,95 +4,46 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
-    android:background="@drawable/item_background"
-    android:layout_marginBottom="0dp"
-    android:layout_marginHorizontal="0dp">
+    android:layout_marginBottom="8dp"
+    android:background="@android:drawable/dialog_holo_light_frame">
 
-    <!-- 表头行 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="3"
-        android:layout_marginBottom="4dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.6"
-            android:text="区域"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:textColor="#333333"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.5"
-            android:text="板标"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:textColor="#333333"
-            android:gravity="center"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:text="计数"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:textColor="#333333"
-            android:gravity="end"/>
-    </LinearLayout>
-
-    <!-- 数据行 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:weightSum="3">
 
-        <!-- 区域显示 -->
         <TextView
             android:id="@+id/tv_item_area"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.6"
+            android:layout_weight="1"
             android:textSize="16sp"
-            android:textColor="#2196F3"
-            android:ellipsize="end"
-            android:maxLines="1"/>
+            android:textStyle="bold" />
 
-        <!-- 板标显示 -->
         <TextView
             android:id="@+id/tv_item_plate"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.5"
+            android:layout_weight="1"
             android:textSize="16sp"
-            android:textColor="#4CAF50"
-            android:gravity="center"
-            android:ellipsize="end"
-            android:maxLines="1"/>
+            android:gravity="center" />
 
-        <!-- 商品数量显示 -->
         <TextView
             android:id="@+id/tv_item_count"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:textSize="16sp"
-            android:textColor="#E91E63"
-            android:gravity="end"
-            android:textStyle="bold"/>
-        <TextView
-            android:id="@+id/tv_item_quantity"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="14sp"
-            android:textColor="#4CAF50"
-            android:gravity="center" />
+            android:textSize="16sp"
+            android:gravity="right" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_item_bill_number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="14sp"
+        android:textColor="#666666" />
+
 </LinearLayout>

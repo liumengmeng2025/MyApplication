@@ -1,6 +1,6 @@
 package com.example.inventorypda;
 
-import android.content.Intent; // 添加这行导入
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +32,7 @@ public class QueryLocationActivity extends AppCompatActivity {
 
     // UI组件声明
     private EditText etSearch;
-    private Button btnByProduct, btnByPlate, btnUnbind, btnCabinetQuery; // 添加btnCabinetQuery
+    private Button btnByProduct, btnByPlate, btnUnbind, btnCabinetQuery;
     private ListView lvItems;
 
     // 数据列表和适配器
@@ -60,7 +60,7 @@ public class QueryLocationActivity extends AppCompatActivity {
         initData();
         // 设置按钮点击事件
         setupButtonListeners();
-        // 修复：添加列表事件绑定（之前遗漏调用）
+        // 添加列表事件绑定
         setupListListeners();
     }
 
@@ -94,7 +94,7 @@ public class QueryLocationActivity extends AppCompatActivity {
         btnByProduct = findViewById(R.id.btnByProduct);
         btnByPlate = findViewById(R.id.btnByPlate);
         btnUnbind = findViewById(R.id.btnUnbind);
-        btnCabinetQuery = findViewById(R.id.btnCabinetQuery); // 初始化新按钮
+        btnCabinetQuery = findViewById(R.id.btnCabinetQuery);
         lvItems = findViewById(R.id.lvItems);
     }
 
@@ -120,7 +120,7 @@ public class QueryLocationActivity extends AppCompatActivity {
         });
     }
 
-    // 修复：仅保留1个列表事件绑定方法（含长按弹窗逻辑）
+    // 列表事件绑定方法
     private void setupListListeners() {
         // 列表项点击（选中项高亮）
         lvItems.setOnItemClickListener((parent, view, position, id) -> {
@@ -132,8 +132,13 @@ public class QueryLocationActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 LocationItem selectedItem = itemList.get(position);
-                showDeleteConfirmDialog(selectedItem); // 弹确认框
-                return true; // 消费事件，不触发点击
+                // 修改条件：检查板标是否为空
+                if (selectedItem.板标 == null || selectedItem.板标.isEmpty()) {
+                    Toast.makeText(QueryLocationActivity.this, "无法删除板标为空的明细", Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                showDeleteConfirmDialog(selectedItem);
+                return true;
             }
         });
     }
@@ -223,6 +228,14 @@ public class QueryLocationActivity extends AppCompatActivity {
             return;
         }
 
+        // 修改条件：检查是否有板标为空的记录
+        for (LocationItem item : itemList) {
+            if (item.板标 == null || item.板标.isEmpty()) {
+                Toast.makeText(this, "存在板标为空的记录，无法批量删除", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
         final int[] deleteCount = {0};
         final int total = itemList.size();
         for (LocationItem item : itemList) {
@@ -260,13 +273,13 @@ public class QueryLocationActivity extends AppCompatActivity {
                         item.商品货号, item.板标, item.区域
                 ))
                 .setPositiveButton("是", (dialog, which) -> {
-                    deleteSingleItem(item); // 执行删除
+                    deleteSingleItem(item);
                     dialog.dismiss();
                 })
                 .setNegativeButton("否", (dialog, which) -> {
-                    dialog.dismiss(); // 仅关闭对话框
+                    dialog.dismiss();
                 })
-                .setCancelable(false) // 禁止外部点击关闭
+                .setCancelable(false)
                 .show();
     }
 
@@ -323,11 +336,9 @@ public class QueryLocationActivity extends AppCompatActivity {
     public class LocationAdapter extends android.widget.BaseAdapter {
         private android.content.Context context;
         private List<LocationItem> items;
-        private int selectedPosition = -1; // 选中项高亮
+        private int selectedPosition = -1;
 
-        // 日期解析器（处理 RFC 2822 格式，如 Fri,29 Aug 2025）
         private final SimpleDateFormat inputDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH);
-        // 日期格式化器（目标格式：2025/MM/dd）
         private final SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
 
         public LocationAdapter(android.content.Context context, List<LocationItem> items) {
@@ -335,7 +346,7 @@ public class QueryLocationActivity extends AppCompatActivity {
             this.items = items;
         }
 
-        // 设置选中项（用于列表点击选择）
+        // 设置选中项
         public void setSelectedPosition(int position) {
             selectedPosition = position;
             notifyDataSetChanged();
@@ -356,17 +367,15 @@ public class QueryLocationActivity extends AppCompatActivity {
             return items.get(position).id;
         }
 
-        // ViewHolder：优化布局复用
         class ViewHolder {
-            TextView tvLine1; // 第一行：商品+板标
-            TextView tvLine2; // 第二行：区域+创建时间
+            TextView tvLine1;
+            TextView tvLine2;
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder holder;
 
-            // 复用布局
             if (convertView == null) {
                 convertView = View.inflate(context, android.R.layout.simple_list_item_2, null);
                 holder = new ViewHolder();
@@ -377,18 +386,14 @@ public class QueryLocationActivity extends AppCompatActivity {
                 holder = (ViewHolder) convertView.getTag();
             }
 
-            // 填充数据（带前缀 + 日期优化）
             LocationItem item = items.get(position);
-            // 第一行：商品+板标（带前缀，不变）
             holder.tvLine1.setText(String.format("商品：%s | 板标：%s", item.商品货号, item.板标));
-            // 第二行：区域+格式化后的日期
             holder.tvLine2.setText(String.format(
                     "区域：%s | 创建时间：%s",
                     item.区域,
-                    formatCreateDate(item.创建时间) // 调用日期格式化方法
+                    formatCreateDate(item.创建时间)
             ));
 
-            // 选中项高亮（不变）
             if (position == selectedPosition) {
                 convertView.setBackgroundColor(context.getResources().getColor(android.R.color.darker_gray));
             } else {
@@ -398,28 +403,21 @@ public class QueryLocationActivity extends AppCompatActivity {
             return convertView;
         }
 
-        // 核心：将 Fri,29 Aug 2025 转为 2025/8/29（自动去前导零）
         private String formatCreateDate(String originalDate) {
-            // 1. 处理空值
             if (originalDate == null || originalDate.isEmpty()) {
                 return "未记录";
             }
 
             try {
-                // 2. 解析 RFC 2822 格式的日期（如 Fri,29 Aug 2025）
                 Date date = inputDateFormat.parse(originalDate);
                 if (date == null) {
                     return originalDate;
                 }
 
-                // 3. 格式化为 2025/MM/dd（如 2025/08/29）
                 String formattedDate = outputDateFormat.format(date);
-
-                // 4. 去除月份/日期的前导零（如 2025/08/09 → 2025/8/9）
                 return formattedDate.replaceAll("/0", "/").replaceFirst("^0", "");
 
             } catch (ParseException e) {
-                // 5. 解析失败（如日期格式异常），返回原始值并打印日志
                 Log.e("DateFormatError", "日期解析失败，原始值：" + originalDate, e);
                 return originalDate;
             }

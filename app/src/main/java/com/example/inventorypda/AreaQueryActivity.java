@@ -1,289 +1,447 @@
-    package com.example.inventorypda;
+package com.example.inventorypda;
 
-    import androidx.appcompat.app.AppCompatActivity;
-    import android.os.Bundle;
-    import android.util.Log;
-    import android.view.LayoutInflater;
-    import android.view.View;
-    import android.widget.Button;
-    import android.widget.EditText;
-    import android.widget.LinearLayout;
-    import android.widget.TextView;
-    import android.widget.Toast;
-    import com.android.volley.Request;
-    import com.android.volley.RequestQueue;
-    import com.android.volley.Response;
-    import com.android.volley.VolleyError;
-    import com.android.volley.toolbox.JsonObjectRequest;
-    import com.android.volley.toolbox.Volley;
-    import org.json.JSONArray;
-    import org.json.JSONException;
-    import org.json.JSONObject;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.media.MediaPlayer;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-    public class AreaQueryActivity extends AppCompatActivity {
+public class AreaQueryActivity extends AppCompatActivity {
 
-        // 控件声明
-        private EditText etAreaInput;
-        private Button btnQueryArea;
-        private Button btnQueryPlate;
-        private TextView tvResultTitle;
-        private LinearLayout llResultContainer;
-        private TextView tvNoResult;
-        private TextView tvTotalCount;
-        // Volley请求队列（用于网络请求）
-        private RequestQueue requestQueue;
-        private static final String API_BASE_URL = "http://121.12.156.222:5000";
+    // 控件声明
+    private EditText etAreaInput;
+    private Button btnQueryArea;
+    private Button btnQueryPlate;
+    private Button btnBatchUpdateBill;
+    private TextView tvResultTitle;
+    private LinearLayout llResultContainer;
+    private TextView tvNoResult;
+    private TextView tvTotalCount;
 
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_area_query);
+    // Volley请求队列
+    private RequestQueue requestQueue;
+    private static final String API_BASE_URL = "http://121.12.156.222:5000";
 
-            // 1. 初始化控件（绑定XML中的ID）
-            initViews();
-            // 2. 初始化Volley请求队列
-            requestQueue = Volley.newRequestQueue(this);
-            // 3. 设置按钮点击事件
-            setButtonListeners();
-        }
+    // 查询状态
+    private String currentQueryType = "";
+    private String currentQueryValue = "";
+    private JSONArray currentResults = new JSONArray();
 
-        // 初始化控件（确保XML中ID与这里一致）
-        private void initViews() {
-            etAreaInput = findViewById(R.id.et_area_input);
-            btnQueryArea = findViewById(R.id.btn_query_area);
-            btnQueryPlate = findViewById(R.id.btn_query_plate);
-            tvResultTitle = findViewById(R.id.tv_result_title);
-            llResultContainer = findViewById(R.id.ll_result_container);
-            tvNoResult = findViewById(R.id.tv_no_result);
-            tvTotalCount = findViewById(R.id.tv_total_count);
-        }
+    // 语音播报
+    private MediaPlayer mediaPlayer;
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_area_query);
+
+        // 初始化控件
+        initViews();
+        // 初始化Volley请求队列
+        requestQueue = Volley.newRequestQueue(this);
+        // 初始化语音播报
+        initMediaPlayer();
         // 设置按钮点击事件
-        private void setButtonListeners() {
-            // 区域查询按钮点击事件
-            btnQueryArea.setOnClickListener(new View.OnClickListener() {
+        setButtonListeners();
+    }
+
+    @Override
+    protected void onDestroy() {
+        // 释放MediaPlayer资源
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+        super.onDestroy();
+    }
+
+    // 初始化MediaPlayer
+    private void initMediaPlayer() {
+        try {
+            // 从raw文件夹加载MP3文件
+            mediaPlayer = MediaPlayer.create(this, R.raw.success_sound);
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
-                public void onClick(View v) {
-                    String area = etAreaInput.getText().toString().trim();
-                    // 校验输入：区域不能为空
-                    if (area.isEmpty()) {
-                        Toast.makeText(AreaQueryActivity.this, "请输入区域名称", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    // 清空之前的查询结果
-                    clearPreviousResult();
-                    // 调用API查询区域记录
-                    queryAreaRecords(area);
+                public void onCompletion(MediaPlayer mp) {
+                    // 播放完成后重置MediaPlayer
+                    mp.reset();
                 }
             });
+        } catch (Exception e) {
+            Log.e("MediaPlayer", "初始化MediaPlayer失败: " + e.getMessage());
+        }
+    }
 
-            // 板标模糊查询按钮点击事件
-            btnQueryPlate.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    String plate = etAreaInput.getText().toString().trim();
-                    // 校验输入：板标不能为空
-                    if (plate.isEmpty()) {
-                        Toast.makeText(AreaQueryActivity.this, "请输入板标", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    // 清空之前的查询结果
-                    clearPreviousResult();
-                    // 调用API查询板标记录
-                    queryPlateRecords(plate);
+    // 播放语音
+    private void playSound() {
+        if (mediaPlayer != null) {
+            try {
+                // 如果正在播放，先停止
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
                 }
-            });
+                // 重置并准备播放
+                mediaPlayer.reset();
+                mediaPlayer = MediaPlayer.create(this, R.raw.success_sound);
+                mediaPlayer.start();
+            } catch (Exception e) {
+                Log.e("MediaPlayer", "播放声音失败: " + e.getMessage());
+            }
+        }
+    }
+
+    // 初始化控件
+    private void initViews() {
+        etAreaInput = findViewById(R.id.et_area_input);
+        btnQueryArea = findViewById(R.id.btn_query_area);
+        btnQueryPlate = findViewById(R.id.btn_query_plate);
+        btnBatchUpdateBill = findViewById(R.id.btn_batch_update_bill);
+        tvResultTitle = findViewById(R.id.tv_result_title);
+        llResultContainer = findViewById(R.id.ll_result_container);
+        tvNoResult = findViewById(R.id.tv_no_result);
+        tvTotalCount = findViewById(R.id.tv_total_count);
+    }
+
+    // 设置按钮点击事件
+    private void setButtonListeners() {
+        // 区域查询按钮点击事件
+        btnQueryArea.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String area = etAreaInput.getText().toString().trim();
+                if (area.isEmpty()) {
+                    Toast.makeText(AreaQueryActivity.this, "请输入区域名称", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                clearPreviousResult();
+                currentQueryType = "area";
+                currentQueryValue = area;
+                queryAreaRecords(area);
+            }
+        });
+
+        // 板标模糊查询按钮点击事件
+        btnQueryPlate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String plate = etAreaInput.getText().toString().trim();
+                if (plate.isEmpty()) {
+                    Toast.makeText(AreaQueryActivity.this, "请输入板标", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                clearPreviousResult();
+                currentQueryType = "plate";
+                currentQueryValue = plate;
+                queryPlateRecords(plate);
+            }
+        });
+
+        // 批量更新提单号按钮点击事件
+        btnBatchUpdateBill.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (currentResults.length() == 0) {
+                    Toast.makeText(AreaQueryActivity.this, "请先查询数据", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                showBatchBillNumberDialog();
+            }
+        });
+    }
+
+    // 清空之前的查询结果
+    private void clearPreviousResult() {
+        llResultContainer.removeAllViews();
+        tvResultTitle.setVisibility(View.GONE);
+        llResultContainer.setVisibility(View.GONE);
+        tvNoResult.setVisibility(View.GONE);
+        tvTotalCount.setVisibility(View.GONE);
+        btnBatchUpdateBill.setVisibility(View.GONE);
+        currentResults = new JSONArray();
+    }
+
+    // 显示批量更新提单号对话框
+    private void showBatchBillNumberDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_bill_number, null);
+        EditText etBillNumber = dialogView.findViewById(R.id.et_bill_number);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+        builder.setTitle("批量更新提单号");
+        builder.setPositiveButton("确认", (dialog, which) -> {
+            String billNumber = etBillNumber.getText().toString().trim();
+            if (!billNumber.isEmpty()) {
+                batchUpdateBillNumber(billNumber);
+            } else {
+                Toast.makeText(this, "提单号不能为空", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("取消", null);
+        builder.show();
+    }
+
+    // 批量更新提单号
+    private void batchUpdateBillNumber(String billNumber) {
+        try {
+            JSONArray updateData = new JSONArray();
+            for (int i = 0; i < currentResults.length(); i++) {
+                JSONObject item = currentResults.getJSONObject(i);
+                String area = item.getString("区域");
+                String plate = item.getString("板标");
+
+                JSONObject updateItem = new JSONObject();
+                updateItem.put("area", area);
+                updateItem.put("plate", plate);
+                updateItem.put("bill_number", billNumber);
+                updateData.put(updateItem);
+            }
+
+            batchUpdateBillNumberApi(updateData, billNumber);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "数据处理失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 调用批量更新API
+    private void batchUpdateBillNumberApi(JSONArray updateData, final String billNumber) {
+        String apiUrl = API_BASE_URL + "/receiving/batch_update_bill_number";
+
+        JSONObject requestBody = new JSONObject();
+        try {
+            requestBody.put("data", updateData);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "请求数据构建失败", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        // 清空之前的查询结果（避免多次查询结果叠加）
-        private void clearPreviousResult() {
-            llResultContainer.removeAllViews(); // 清空结果列表
-            tvResultTitle.setVisibility(View.GONE); // 隐藏结果标题
-            llResultContainer.setVisibility(View.GONE); // 隐藏结果容器
-            tvNoResult.setVisibility(View.GONE); // 隐藏无结果提示
-            tvTotalCount.setVisibility(View.GONE); // 隐藏总记录数显示
-        }
-        // 调用后端API查询区域记录
-        private void queryAreaRecords(String area) {
-            // 构造API请求地址
-            String apiUrl = API_BASE_URL + "/receiving/area_summary?area=" + area;
+        JsonObjectRequest jsonRequest = new JsonObjectRequest(
+                Request.Method.POST,
+                apiUrl,
+                requestBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            boolean success = response.getBoolean("success");
+                            String message = response.getString("message");
+                            if (success) {
+                                // 播放成功提示音
+                                playSound();
+                                Toast.makeText(AreaQueryActivity.this, message, Toast.LENGTH_SHORT).show();
 
-            Log.d("API_DEBUG", "请求URL: " + apiUrl);
-
-            // 1. 创建Volley GET请求
-            JsonObjectRequest jsonRequest = new JsonObjectRequest(
-                    Request.Method.GET,
-                    apiUrl,
-                    null,
-                    new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            try {
-                                Log.d("API_DEBUG", "响应内容: " + response.toString());
-
-                                // 解析后端返回的success字段（判断请求是否成功）
-                                boolean success = response.getBoolean("success");
-                                if (success) {
-                                    // 解析数据
-                                    JSONObject dataObj = response.getJSONObject("data");
-                                    JSONArray dataArray = dataObj.getJSONArray("records");
-
-                                    // 获取总记录数和总件数
-                                    int totalRecords = dataObj.optInt("total_records", dataArray.length());
-                                    int totalQuantity = dataObj.optInt("total_quantity", 0);
-
-                                    if (dataArray.length() > 0) {
-                                        // 有数据：显示结果标题和容器，遍历添加结果项
-                                        tvResultTitle.setText("区域查询结果");
-                                        tvResultTitle.setVisibility(View.VISIBLE);
-                                        llResultContainer.setVisibility(View.VISIBLE);
-
-                                        // 显示总记录数和总件数（在同一行）
-                                        tvTotalCount.setText("共计 " + totalRecords + " 条记录，合计 " + totalQuantity + " 件");
-                                        tvTotalCount.setVisibility(View.VISIBLE);
-
-                                        for (int i = 0; i < dataArray.length(); i++) {
-                                            JSONObject item = dataArray.getJSONObject(i);
-                                            Log.d("API_DEBUG", "项目 " + i + ": " + item.toString());
-
-                                            // 从后端获取字段
-                                            String areaName = item.optString("区域", "未知区域");
-                                            String plate = item.optString("板标", "未知板标");
-                                            int productCount = item.optInt("商品种类数", 0);
-
-                                            // 动态添加结果项到界面
-                                            addNewResultItem(areaName, plate, productCount);
-                                        }
-                                    } else {
-                                        // 无数据：显示无结果提示
-                                        tvNoResult.setText("未查询到该区域的收货记录");
-                                        tvNoResult.setVisibility(View.VISIBLE);
-                                    }
+                                // 重新查询数据以刷新显示
+                                if (currentQueryType.equals("area")) {
+                                    queryAreaRecords(currentQueryValue);
                                 } else {
-                                    // 后端返回失败（如参数错误）：显示错误信息
-                                    String errorMsg = response.getString("message");
-                                    Toast.makeText(AreaQueryActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                                    queryPlateRecords(currentQueryValue);
                                 }
-                            } catch (JSONException e) {
-                                // JSON解析失败（如字段不匹配）
-                                e.printStackTrace();
-                                Log.e("API_DEBUG", "JSON解析错误: " + e.getMessage());
-                                Toast.makeText(AreaQueryActivity.this, "查询结果解析失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(AreaQueryActivity.this, message, Toast.LENGTH_SHORT).show();
                             }
-                        }
-                    },
-                    new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            error.printStackTrace();
-                            Log.e("API_DEBUG", "网络请求错误: " + error.getMessage());
-                            Toast.makeText(AreaQueryActivity.this, "网络请求失败，请检查服务器连接", Toast.LENGTH_SHORT).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Toast.makeText(AreaQueryActivity.this, "响应解析失败", Toast.LENGTH_SHORT).show();
                         }
                     }
-            );
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                        Toast.makeText(AreaQueryActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
 
-            // 4. 将请求加入队列（执行网络请求）
-            requestQueue.add(jsonRequest);
-        }
+        requestQueue.add(jsonRequest);
+    }
 
-        // 调用后端API查询板标记录
-        private void queryPlateRecords(String plate) {
-            // 构造API请求地址
-            String apiUrl = API_BASE_URL + "/receiving/plate_summary?plate=" + plate;
+    // 调用后端API查询区域记录
+    private void queryAreaRecords(String area) {
+        String apiUrl = API_BASE_URL + "/receiving/area_summary?area=" + area;
 
-            Log.d("API_DEBUG", "请求URL: " + apiUrl);
+        Log.d("API_DEBUG", "请求URL: " + apiUrl);
 
-            // 1. 创建Volley GET请求
-            JsonObjectRequest jsonRequest = new JsonObjectRequest(
-                    Request.Method.GET,
-                    apiUrl,
-                    null,
-                    new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            try {
-                                Log.d("API_DEBUG", "响应内容: " + response.toString());
+        JsonObjectRequest jsonRequest = new JsonObjectRequest(
+                Request.Method.GET,
+                apiUrl,
+                null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            Log.d("API_DEBUG", "响应内容: " + response.toString());
 
-                                // 解析后端返回的success字段（判断请求是否成功）
-                                boolean success = response.getBoolean("success");
-                                if (success) {
-                                    // 解析数据
-                                    JSONObject dataObj = response.getJSONObject("data");
-                                    JSONArray dataArray = dataObj.getJSONArray("records");
+                            boolean success = response.getBoolean("success");
+                            if (success) {
+                                JSONObject dataObj = response.getJSONObject("data");
+                                JSONArray dataArray = dataObj.getJSONArray("records");
 
-                                    // 获取总记录数和总件数
-                                    int totalRecords = dataObj.optInt("total_records", dataArray.length());
-                                    int totalQuantity = dataObj.optInt("total_quantity", 0);
+                                // 保存当前查询结果
+                                currentResults = dataArray;
 
-                                    if (dataArray.length() > 0) {
-                                        // 有数据：显示结果标题和容器，遍历添加结果项
-                                        tvResultTitle.setText("板标查询结果");
-                                        tvResultTitle.setVisibility(View.VISIBLE);
-                                        llResultContainer.setVisibility(View.VISIBLE);
+                                int totalRecords = dataObj.optInt("total_records", dataArray.length());
+                                int totalQuantity = dataObj.optInt("total_quantity", 0);
 
-                                        // 显示总记录数和总件数（在同一行）
-                                        tvTotalCount.setText("共计 " + totalRecords + " 条记录，合计 " + totalQuantity + " 件");
-                                        tvTotalCount.setVisibility(View.VISIBLE);
+                                if (dataArray.length() > 0) {
+                                    tvResultTitle.setText("区域查询结果");
+                                    tvResultTitle.setVisibility(View.VISIBLE);
+                                    llResultContainer.setVisibility(View.VISIBLE);
+                                    btnBatchUpdateBill.setVisibility(View.VISIBLE);
 
-                                        for (int i = 0; i < dataArray.length(); i++) {
-                                            JSONObject item = dataArray.getJSONObject(i);
-                                            Log.d("API_DEBUG", "项目 " + i + ": " + item.toString());
+                                    tvTotalCount.setText("共计 " + totalRecords + " 条记录，合计 " + totalQuantity + " 件");
+                                    tvTotalCount.setVisibility(View.VISIBLE);
 
-                                            // 从后端获取字段
-                                            String areaName = item.optString("区域", "未知区域");
-                                            String plate = item.optString("板标", "未知板标");
-                                            int productCount = item.optInt("商品种类数", 0);
+                                    for (int i = 0; i < dataArray.length(); i++) {
+                                        JSONObject item = dataArray.getJSONObject(i);
+                                        Log.d("API_DEBUG", "项目 " + i + ": " + item.toString());
 
-                                            // 动态添加结果项到界面
-                                            addNewResultItem(areaName, plate, productCount);
-                                        }
-                                    } else {
-                                        // 无数据：显示无结果提示
-                                        tvNoResult.setText("未查询到包含该板标的收货记录");
-                                        tvNoResult.setVisibility(View.VISIBLE);
+                                        String areaName = item.optString("区域", "未知区域");
+                                        String plate = item.optString("板标", "未知板标");
+                                        String billNumber = item.optString("提单号", "未设置");
+                                        int productCount = item.optInt("商品种类数", 0);
+
+                                        addNewResultItem(areaName, plate, billNumber, productCount);
                                     }
+
+                                    // 播放查询成功提示音
+
                                 } else {
-                                    // 后端返回失败（如参数错误）：显示错误信息
-                                    String errorMsg = response.getString("message");
-                                    Toast.makeText(AreaQueryActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                                    tvNoResult.setText("未查询到该区域的收货记录");
+                                    tvNoResult.setVisibility(View.VISIBLE);
                                 }
-                            } catch (JSONException e) {
-                                // JSON解析失败（如字段不匹配）
-                                e.printStackTrace();
-                                Log.e("API_DEBUG", "JSON解析错误: " + e.getMessage());
-                                Toast.makeText(AreaQueryActivity.this, "查询结果解析失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            } else {
+                                String errorMsg = response.getString("message");
+                                Toast.makeText(AreaQueryActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
                             }
-                        }
-                    },
-                    new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            error.printStackTrace();
-                            Log.e("API_DEBUG", "网络请求错误: " + error.getMessage());
-                            Toast.makeText(AreaQueryActivity.this, "网络请求失败，请检查服务器连接", Toast.LENGTH_SHORT).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Log.e("API_DEBUG", "JSON解析错误: " + e.getMessage());
+                            Toast.makeText(AreaQueryActivity.this, "查询结果解析失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     }
-            );
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                        Log.e("API_DEBUG", "网络请求错误: " + error.getMessage());
+                        Toast.makeText(AreaQueryActivity.this, "网络请求失败，请检查服务器连接", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
 
-            // 4. 将请求加入队列（执行网络请求）
-            requestQueue.add(jsonRequest);
-        }
+        requestQueue.add(jsonRequest);
+    }
 
-        private void addNewResultItem(String areaName, String plate, int productCount) {
-            // 1. 加载单个结果项的布局
-            View itemView = LayoutInflater.from(this).inflate(R.layout.item_area_result, null);
+    // 调用后端API查询板标记录
+    private void queryPlateRecords(String plate) {
+        String apiUrl = API_BASE_URL + "/receiving/plate_summary?plate=" + plate;
 
-            // 2. 绑定结果项的控件
-            TextView tvArea = itemView.findViewById(R.id.tv_item_area); // 需要确保布局中有这个TextView
-            TextView tvPlate = itemView.findViewById(R.id.tv_item_plate);
-            TextView tvProductCount = itemView.findViewById(R.id.tv_item_count);
+        Log.d("API_DEBUG", "请求URL: " + apiUrl);
 
-            // 3. 设置结果项数据
-            tvArea.setText(areaName);
-            tvPlate.setText(plate);
-            tvProductCount.setText(String.valueOf(productCount));
+        JsonObjectRequest jsonRequest = new JsonObjectRequest(
+                Request.Method.GET,
+                apiUrl,
+                null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            Log.d("API_DEBUG", "响应内容: " + response.toString());
 
-            // 4. 将结果项添加到容器
-            llResultContainer.addView(itemView);
-        }
-        }
+                            boolean success = response.getBoolean("success");
+                            if (success) {
+                                JSONObject dataObj = response.getJSONObject("data");
+                                JSONArray dataArray = dataObj.getJSONArray("records");
+
+                                // 保存当前查询结果
+                                currentResults = dataArray;
+
+                                int totalRecords = dataObj.optInt("total_records", dataArray.length());
+                                int totalQuantity = dataObj.optInt("total_quantity", 0);
+
+                                if (dataArray.length() > 0) {
+                                    tvResultTitle.setText("板标查询结果");
+                                    tvResultTitle.setVisibility(View.VISIBLE);
+                                    llResultContainer.setVisibility(View.VISIBLE);
+                                    btnBatchUpdateBill.setVisibility(View.VISIBLE);
+
+                                    tvTotalCount.setText("共计 " + totalRecords + " 条记录，合计 " + totalQuantity + " 件");
+                                    tvTotalCount.setVisibility(View.VISIBLE);
+
+                                    for (int i = 0; i < dataArray.length(); i++) {
+                                        JSONObject item = dataArray.getJSONObject(i);
+                                        Log.d("API_DEBUG", "项目 " + i + ": " + item.toString());
+
+                                        String areaName = item.optString("区域", "未知区域");
+                                        String plate = item.optString("板标", "未知板标");
+                                        String billNumber = item.optString("提单号", "未设置");
+                                        int productCount = item.optInt("商品种类数", 0);
+
+                                        addNewResultItem(areaName, plate, billNumber, productCount);
+                                    }
+
+                                    // 播放查询成功提示音
+                                } else {
+                                    tvNoResult.setText("未查询到包含该板标的收货记录");
+                                    tvNoResult.setVisibility(View.VISIBLE);
+                                }
+                            } else {
+                                String errorMsg = response.getString("message");
+                                Toast.makeText(AreaQueryActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Log.e("API_DEBUG", "JSON解析错误: " + e.getMessage());
+                            Toast.makeText(AreaQueryActivity.this, "查询结果解析失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                        Log.e("API_DEBUG", "网络请求错误: " + error.getMessage());
+                        Toast.makeText(AreaQueryActivity.this, "网络请求失败，请检查服务器连接", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        requestQueue.add(jsonRequest);
+    }
+
+    private void addNewResultItem(String areaName, String plate, String billNumber, int productCount) {
+        View itemView = LayoutInflater.from(this).inflate(R.layout.item_area_result, null);
+
+        TextView tvArea = itemView.findViewById(R.id.tv_item_area);
+        TextView tvPlate = itemView.findViewById(R.id.tv_item_plate);
+        TextView tvBillNumber = itemView.findViewById(R.id.tv_item_bill_number);
+        TextView tvProductCount = itemView.findViewById(R.id.tv_item_count);
+
+        tvArea.setText(areaName);
+        tvPlate.setText(plate);
+        tvBillNumber.setText("提单号: " + billNumber);
+        tvProductCount.setText(String.valueOf(productCount));
+
+        llResultContainer.addView(itemView);
+    }
+}

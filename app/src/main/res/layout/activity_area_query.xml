@@ -11,7 +11,7 @@
     <EditText
         android:id="@+id/et_area_input"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="35dp"
         android:hint="请输入区域名称或板标"
         android:paddingHorizontal="12dp"
         android:background="@android:drawable/editbox_background_normal"
@@ -49,6 +49,18 @@
             android:textSize="14sp" />
 
     </LinearLayout>
+
+    <!-- 批量更新提单号按钮 -->
+    <Button
+        android:id="@+id/btn_batch_update_bill"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#FF9800"
+        android:text="批量更新提单号"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone" />
 
     <!-- 结果显示区域（滚动视图） -->
     <ScrollView

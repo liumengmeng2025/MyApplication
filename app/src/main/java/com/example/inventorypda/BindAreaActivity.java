@@ -98,12 +98,13 @@ public class BindAreaActivity extends AppCompatActivity {
     private void setupListeners() {
         btnScanPlate.setOnClickListener(v -> loadItemsByPlate());
         btnBindArea.setOnClickListener(v -> showAreaInputDialog());
-        btnUnbind.setOnClickListener(v -> batchDeleteNonEmptyAreaItems());
+        btnUnbind.setOnClickListener(v -> batchDeleteNonEmptyPlateItems());
 
         lvItems.setOnItemLongClickListener((parent, view, position, id) -> {
             BindAreaItem item = itemList.get(position);
-            if (item.区域 == null || item.区域.isEmpty()) {
-                Toast.makeText(BindAreaActivity.this, "仅可删除已绑定区域的明细", Toast.LENGTH_SHORT).show();
+            // 修改条件：只要板标不为空就可以删除
+            if (item.板标 == null || item.板标.isEmpty()) {
+                Toast.makeText(BindAreaActivity.this, "无法删除板标为空的明细", Toast.LENGTH_SHORT).show();
                 return true;
             }
             showSingleDeleteConfirm(item);
@@ -113,7 +114,7 @@ public class BindAreaActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        super.onDestroy(); // 修复：移除多余的"on"
         releaseMediaPlayer(bindSuccessSound);
         releaseMediaPlayer(unbindSuccessSound);
     }
@@ -304,7 +305,7 @@ public class BindAreaActivity extends AppCompatActivity {
         });
     }
 
-    private void batchDeleteNonEmptyAreaItems() {
+    private void batchDeleteNonEmptyPlateItems() {
         if (itemList.isEmpty()) {
             Toast.makeText(this, "无明细可删除", Toast.LENGTH_SHORT).show();
             return;
@@ -312,19 +313,20 @@ public class BindAreaActivity extends AppCompatActivity {
 
         final List<BindAreaItem> toDeleteItems = new ArrayList<>();
         for (BindAreaItem item : itemList) {
-            if (item.区域 != null && !item.区域.isEmpty()) {
+            // 修改条件：只要板标不为空就可以删除
+            if (item.板标 != null && !item.板标.isEmpty()) {
                 toDeleteItems.add(item);
             }
         }
 
         if (toDeleteItems.isEmpty()) {
-            Toast.makeText(this, "没有已绑定区域的明细", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "没有板标不为空的明细", Toast.LENGTH_SHORT).show();
             return;
         }
 
         new AlertDialog.Builder(this)
                 .setTitle("批量解除绑定")
-                .setMessage("确认删除" + toDeleteItems.size() + "条已绑定区域的明细？")
+                .setMessage("确认删除" + toDeleteItems.size() + "条板标不为空的明细？")
                 .setPositiveButton("确认", (dialog, which) -> {
                     final int[] deleteCount = {0};
                     final int total = toDeleteItems.size();
@@ -354,7 +356,7 @@ public class BindAreaActivity extends AppCompatActivity {
     private void showSingleDeleteConfirm(BindAreaItem item) {
         new AlertDialog.Builder(this)
                 .setTitle("删除明细")
-                .setMessage("是否删除商品货号：" + item.商品货号 + "\n区域：" + item.区域)
+                .setMessage("是否删除商品货号：" + item.商品货号 + "\n板标：" + item.板标)
                 .setPositiveButton("确认", (dialog, which) -> {
                     deleteItem(item, () -> {
                         playSound(unbindSuccessSound);
