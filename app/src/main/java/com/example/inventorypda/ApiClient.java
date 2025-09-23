@@ -70,13 +70,10 @@ public class ApiClient {
 
         addToRequestQueue(request);
     }
-    // 修改检查货号存在的方法
+
     public void checkBarcodeExistence(ApiResponseListener listener) {
         getRequest("/receiving/check_barcode_existence", listener);
     }
-    // 8. 检查明细表中商品货号是否存在（新增实现）
-
-    // POST请求方法
     public void postRequest(String url, Map<String, String> params, final ApiResponseListener listener) {
         String fullUrl = BASE_URL + url;
         Log.d("API Request", "POST: " + fullUrl + ", Params: " + params.toString());

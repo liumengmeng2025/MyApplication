@@ -211,13 +211,13 @@ public class ReceivingActivity extends AppCompatActivity {
                             JSONArray barcodeList = data.getJSONArray("barcode_list");
 
                             StringBuilder message = new StringBuilder();
-                            message.append("明细表商品存在性检查结果：\n");
-                            message.append("总商品数：").append(totalCount).append("\n");
-                            message.append("已存在数：").append(existsCount);
+                            message.append("明细表商品存在检查结果：\n");
+                            message.append("总数：").append(totalCount).append("\n");
+                            message.append("重复数：").append(existsCount);
 
                             // 如果有存在的商品，显示详细信息
                             if (existsCount > 0) {
-                                message.append("\n\n已存在的商品货号：");
+                                message.append("\n\n已存在的：");
                                 for (int i = 0; i < barcodeList.length(); i++) {
                                     JSONObject item = barcodeList.getJSONObject(i);
                                     if (item.getBoolean("exists")) {
