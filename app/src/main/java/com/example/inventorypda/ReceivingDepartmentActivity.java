@@ -15,16 +15,21 @@ public class ReceivingDepartmentActivity extends AppCompatActivity {
 
         Button btnReceiving = findViewById(R.id.btnReceiving);
         Button btnBindArea = findViewById(R.id.btnBindArea);
-        Button btnAreaQuery = findViewById(R.id.btnAreaQuery); // 新增区域查询按钮
+        Button btnAreaQuery = findViewById(R.id.btnAreaQuery);
         Button btnBack = findViewById(R.id.btnBack);
-
+        Button btnBatchBind = findViewById(R.id.btnBatchBind);
         btnReceiving.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(ReceivingDepartmentActivity.this, ReceivingActivity.class));
             }
         });
-
+        btnBatchBind.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(ReceivingDepartmentActivity.this, AreaBatchBindActivity.class));
+            }
+        });
         btnBindArea.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

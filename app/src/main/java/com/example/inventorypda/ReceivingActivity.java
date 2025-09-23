@@ -30,7 +30,7 @@ import java.util.Locale;
 public class ReceivingActivity extends AppCompatActivity {
 
     private EditText etPlate, etBarcode;
-    private Button btnScanPlate, btnSave, btnSaveAll, btnClear;
+    private Button btnScanPlate, btnSave, btnSaveAll, btnClear, btnCheckBarcodeExists;
     private ListView lvItems;
     private TextView tvScanCount;
     private List<ReceivingItem> itemList;
@@ -43,7 +43,9 @@ public class ReceivingActivity extends AppCompatActivity {
     private MediaPlayer saveSuccessSound;
     private MediaPlayer duplicateSound;
     private MediaPlayer dialogSound; // 对话框提示音
-    private MediaPlayer deleteSuccessSound; // 新增删除成功提示音
+    private MediaPlayer deleteSuccessSound; // 删除成功提示音
+    private MediaPlayer checkExistsSound; // 检查存在提示音
+    private MediaPlayer shanchuSuccessSound; // 点击删除弹出对话框时播放
 
     private Handler handler = new Handler();
     private Runnable scanRunnable;
@@ -67,7 +69,9 @@ public class ReceivingActivity extends AppCompatActivity {
             saveSuccessSound = MediaPlayer.create(this, R.raw.save_success_sound);
             duplicateSound = MediaPlayer.create(this, R.raw.duplicate_beep);
             dialogSound = MediaPlayer.create(this, R.raw.dialog_sound); // 初始化对话框提示音
-            deleteSuccessSound = MediaPlayer.create(this, R.raw.shanchu_success); // 初始化删除成功提示音
+            deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound); // 删除成功后播放
+            checkExistsSound = MediaPlayer.create(this, R.raw.dialog_sound); // 检查存在提示音
+            shanchuSuccessSound = MediaPlayer.create(this, R.raw.shanchu_success); // 点击删除弹出对话框时播放
         } catch (Exception e) {
             Log.e("SoundError", "无法加载声音文件", e);
         }
@@ -94,6 +98,7 @@ public class ReceivingActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btnSave);
         btnSaveAll = findViewById(R.id.btnSaveAll);
         btnClear = findViewById(R.id.btnClear);
+        btnCheckBarcodeExists = findViewById(R.id.btnCheckBarcodeExists);
         lvItems = findViewById(R.id.lvItems);
         tvScanCount = findViewById(R.id.tvScanCount);
 
@@ -126,6 +131,9 @@ public class ReceivingActivity extends AppCompatActivity {
         btnSaveAll.setOnClickListener(v -> saveAllReceiving());
 
         btnClear.setOnClickListener(v -> clearCurrentTemp());
+
+        // 新增：检查货号是否存在按钮点击事件
+        btnCheckBarcodeExists.setOnClickListener(v -> checkBarcodeExists());
 
         etBarcode.addTextChangedListener(new TextWatcher() {
             @Override
@@ -175,8 +183,10 @@ public class ReceivingActivity extends AppCompatActivity {
         releaseMediaPlayer(scanSuccessSound);
         releaseMediaPlayer(saveSuccessSound);
         releaseMediaPlayer(duplicateSound);
-        releaseMediaPlayer(dialogSound); // 释放对话框提示音
-        releaseMediaPlayer(deleteSuccessSound); // 释放删除成功提示音
+        releaseMediaPlayer(dialogSound);
+        releaseMediaPlayer(deleteSuccessSound);
+        releaseMediaPlayer(checkExistsSound);
+        releaseMediaPlayer(shanchuSuccessSound);
     }
 
     private void releaseMediaPlayer(MediaPlayer mp) {
@@ -185,8 +195,61 @@ public class ReceivingActivity extends AppCompatActivity {
         }
     }
 
+    // 新增：检查货号是否存在方法
+    private void checkBarcodeExists() {
+        String barcode = etBarcode.getText().toString().trim();
+        if (barcode.isEmpty()) {
+            Toast.makeText(this, "请输入商品货号", Toast.LENGTH_SHORT).show();
+            etBarcode.requestFocus();
+            return;
+        }
+
+        playSound(checkExistsSound);
+        Toast.makeText(this, "正在检查货号是否存在...", Toast.LENGTH_SHORT).show();
+
+        apiClient.checkBarcodeExists(barcode, new ApiClient.ApiResponseListener() {
+            @Override
+            public void onSuccess(JSONObject response) {
+                runOnUiThread(() -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            boolean exists = data.getBoolean("exists");
+                            String checkedBarcode = data.getString("barcode");
+
+                            if (exists) {
+                                // 只有在存在重复时才播放dialog_sound
+                                playSound(dialogSound);
+                                Toast.makeText(ReceivingActivity.this,
+                                        "商品货号 " + checkedBarcode + " 在收货表中已存在",
+                                        Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(ReceivingActivity.this,
+                                        "商品货号 " + checkedBarcode + " 在收货表中不存在",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            String errorMsg = response.optString("message", "检查失败");
+                            Toast.makeText(ReceivingActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
+                        Log.e("CheckBarcode", "解析失败", e);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() ->
+                        Toast.makeText(ReceivingActivity.this, "检查失败: " + error, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
     private void showDeleteConfirmDialog(ReceivingItem item) {
-        playSound(deleteSuccessSound); // 改为播放删除成功提示音
+        // 点击删除弹出对话框时播放shanchu_success
+        playSound(shanchuSuccessSound);
         new AlertDialog.Builder(this)
                 .setTitle("确认删除")
                 .setMessage("是否删除商品货号为 " + item.商品货号 + " 的明细记录？")
@@ -205,6 +268,8 @@ public class ReceivingActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     try {
                         if (response.getBoolean("success")) {
+                            // 删除成功后播放delete_success_sound
+                            playSound(deleteSuccessSound);
                             Toast.makeText(ReceivingActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
                             loadTempItems();
                         } else {
@@ -338,6 +403,8 @@ public class ReceivingActivity extends AppCompatActivity {
                             boolean hasDuplicates = response.getJSONObject("data").getBoolean("has_duplicates");
 
                             if (hasDuplicates) {
+                                // 只有在有重复时才播放dialog_sound
+                                playSound(dialogSound);
                                 showDuplicateConfirmDialog();
                             } else {
                                 performSave(false);
@@ -360,7 +427,6 @@ public class ReceivingActivity extends AppCompatActivity {
     }
 
     private void showDuplicateConfirmDialog() {
-        playSound(dialogSound); // 保留对话框提示音
         new AlertDialog.Builder(this)
                 .setTitle("发现重复商品")
                 .setMessage("收货表中已存在相同商品，是否继续保存？")
@@ -417,6 +483,8 @@ public class ReceivingActivity extends AppCompatActivity {
                             boolean hasDuplicates = response.getJSONObject("data").getBoolean("has_duplicates");
 
                             if (hasDuplicates) {
+                                // 只有在有重复时才播放dialog_sound
+                                playSound(dialogSound);
                                 showAllSaveConfirmDialog();
                             } else {
                                 performAllSave(false);
@@ -439,7 +507,6 @@ public class ReceivingActivity extends AppCompatActivity {
     }
 
     private void showAllSaveConfirmDialog() {
-        playSound(dialogSound); // 保留对话框提示音
         new AlertDialog.Builder(this)
                 .setTitle("发现重复商品")
                 .setMessage("收货表中已存在相同商品，是否强制全部保存？")
@@ -482,7 +549,8 @@ public class ReceivingActivity extends AppCompatActivity {
             return;
         }
 
-        playSound(deleteSuccessSound); // 改为播放删除成功提示音
+        // 清空操作使用shanchu_success声音
+        playSound(shanchuSuccessSound);
         new AlertDialog.Builder(this)
                 .setTitle("确认清空")
                 .setMessage("是否清空当前板标 " + currentPlate + " 的临时表数据？")
@@ -499,6 +567,8 @@ public class ReceivingActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     try {
                         if (response.getBoolean("success")) {
+                            // 清空成功播放delete_success_sound
+                            playSound(deleteSuccessSound);
                             Toast.makeText(ReceivingActivity.this, "清空成功", Toast.LENGTH_SHORT).show();
                             loadTempItems();
                         } else {

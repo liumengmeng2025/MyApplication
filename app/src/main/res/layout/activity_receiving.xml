@@ -78,12 +78,19 @@
         android:layout_weight="1"
         android:layout_marginTop="16dp" />
 
+    <Button
+        android:id="@+id/btnCheckBarcodeExists"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="检查是否存在"
+        android:backgroundTint="#FFC107" />
     <TextView
         android:id="@+id/tvScanCount"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="已扫描: 0 条记录"
+        android:layout_marginTop="0dp"
+        android:text="已扫描: 0 条"
         android:background="#A8A8A8"
         android:textSize="18sp"
         android:gravity="center" />

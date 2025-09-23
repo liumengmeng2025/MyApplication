@@ -54,21 +54,20 @@ public class CabinetWithdrawActivity extends AppCompatActivity {
                 Toast.makeText(this, "请输入板标", Toast.LENGTH_SHORT).show();
                 return;
             }
-            withdrawPlate(input); // 现在这个方法已经被正确定义
+            withdrawPlate(input);
         });
 
-        // 已装查询按钮
+        // 提单号查询按钮
         btnQueryLoaded.setOnClickListener(v -> {
             String input = etInput.getText().toString().trim();
             if (input.isEmpty()) {
-                Toast.makeText(this, "请输入板标", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "请输入提单号", Toast.LENGTH_SHORT).show();
                 return;
             }
-            queryLoaded(input);
+            queryByBillNumber(input);
         });
     }
 
-    // 保留一个withdrawSerial方法，处理流水号撤回
     private void withdrawSerial(String serialNo) {
         Map<String, String> params = new HashMap<>();
         params.put("serial_no", serialNo);
@@ -94,12 +93,11 @@ public class CabinetWithdrawActivity extends AppCompatActivity {
                 });
     }
 
-    // 新增withdrawPlate方法，处理板标撤回
     private void withdrawPlate(String barcode) {
         Map<String, String> params = new HashMap<>();
         params.put("barcode", barcode);
 
-        ApiClient.getInstance(this).postRequest("/cabinet/withdraw_plate", params, // 假设使用不同的API端点
+        ApiClient.getInstance(this).postRequest("/cabinet/withdraw_plate", params,
                 new ApiClient.ApiResponseListener() {
                     @Override
                     public void onSuccess(JSONObject response) {
@@ -120,37 +118,58 @@ public class CabinetWithdrawActivity extends AppCompatActivity {
                 });
     }
 
-    private void queryLoaded(String plate) {
-        ApiClient.getInstance(this).getRequest("/cabinet/query_loaded?plate=" + plate,
+    private void queryByBillNumber(String billNumber) {
+        ApiClient.getInstance(this).getRequest("/receiving/query_by_bill_number?bill_number=" + billNumber,
                 new ApiClient.ApiResponseListener() {
                     @Override
                     public void onSuccess(JSONObject response) {
                         try {
-                            JSONObject data = response.getJSONObject("data");
-                            int plateCount = data.getInt("plate_count");
-                            JSONArray plates = data.getJSONArray("plates");
+                            if (response.getBoolean("success")) {
+                                JSONObject data = response.getJSONObject("data");
+                                int totalRecords = data.getInt("total_records");
+                                int totalPlates = data.getInt("total_plates");
+                                int totalBarcodes = data.getInt("total_barcodes");
+                                int distinctBarcodes = data.getInt("distinct_barcodes");
+                                JSONArray items = data.getJSONArray("items");
 
-                            StringBuilder result = new StringBuilder();
-                            result.append("已装柜查询结果:\n");
-                            result.append("共找到 ").append(plateCount).append(" 个板\n\n");
+                                if (totalRecords == 0) {
+                                    tvResult.setText("未找到相关提单号的收货信息");
+                                    return;
+                                }
 
-                            for (int i = 0; i < plates.length(); i++) {
-                                JSONObject plateInfo = plates.getJSONObject(i);
-                                result.append("板标: ").append(plateInfo.getString("板标")).append("\n");
-                                result.append("不重复件数: ").append(plateInfo.getInt("product_count")).append("\n");
-                                result.append("件数: ").append(plateInfo.getInt("total_count")).append("\n\n");
+                                StringBuilder result = new StringBuilder();
+                                result.append("提单号: ").append(billNumber).append("\n");
+                                result.append("查询结果: 共找到 ").append(totalRecords).append(" 条记录\n");
+                                result.append("共计: ").append(totalPlates).append(" 个板\n");
+                                result.append("件数: ").append(totalBarcodes).append("\n");
+                                result.append("不重复件数: ").append(distinctBarcodes).append("\n\n");
+
+                                // 显示每个板的详细信息
+                                for (int i = 0; i < items.length(); i++) {
+                                    JSONObject item = items.getJSONObject(i);
+                                    String plateLabel = item.optString("板标", "");
+                                    int barcodeCount = item.optInt("barcode_count", 0);
+                                    int distinctBarcodeCount = item.optInt("distinct_barcode_count", 0);
+
+                                    result.append("板标: ").append(plateLabel).append("\n");
+                                    result.append("件数: ").append(barcodeCount).append("\n");
+                                    result.append("不重复件数: ").append(distinctBarcodeCount).append("\n");
+                                    result.append("---\n");
+                                }
+
+                                tvResult.setText(result.toString());
+                            } else {
+                                tvResult.setText("查询失败: " + response.optString("error", "未知错误"));
                             }
-
-                            tvResult.setText(result.toString());
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            tvResult.setText("已装柜查询结果: 数据解析错误");
+                            tvResult.setText("数据解析错误: " + e.getMessage());
                         }
                     }
 
                     @Override
                     public void onError(String error) {
-                        tvResult.setText("已装柜查询失败: " + error);
+                        tvResult.setText("查询失败: " + error);
                     }
                 });
     }

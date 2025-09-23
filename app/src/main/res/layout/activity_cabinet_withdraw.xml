@@ -9,7 +9,7 @@
         android:id="@+id/etInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="请输入流水号或板标"
+        android:hint="请输入流水号、板标或提单号"
         android:inputType="text"
         android:textSize="14sp" />
 
@@ -47,20 +47,26 @@
             android:layout_weight="1"
             android:layout_marginStart="5dp"
             android:backgroundTint="#FF9800"
-            android:text="已装查询"
+            android:text="提单号查询"
             android:textSize="12sp" />
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvResult"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="10dp"
-        android:background="#f0f0f0"
-        android:padding="10dp"
-        android:textSize="12sp"
-        android:text="查询结果将显示在这里" />
+        android:layout_marginTop="10dp">
+
+        <TextView
+            android:id="@+id/tvResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#f0f0f0"
+            android:padding="10dp"
+            android:textSize="12sp"
+            android:text="查询结果将显示在这里" />
+
+    </ScrollView>
 
 </LinearLayout>

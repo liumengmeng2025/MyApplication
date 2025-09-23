@@ -70,7 +70,37 @@ public class ApiClient {
 
         addToRequestQueue(request);
     }
+    /**
+     * 检查货号是否存在
+     */
+    public void checkBarcodeExists(String barcode, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/check_barcode_exists?barcode=" + barcode;
 
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.GET,
+                url,
+                null,
+                response -> {
+                    Log.d("ApiClient", "检查货号存在成功: " + response.toString());
+                    listener.onSuccess(response);
+                },
+                error -> {
+                    // 简化错误处理
+                    String errorMsg = "网络请求失败";
+                    if (error != null && error.getMessage() != null) {
+                        errorMsg = error.getMessage();
+                    }
+                    if (error != null && error.networkResponse != null) {
+                        errorMsg = "HTTP错误: " + error.networkResponse.statusCode;
+                    }
+
+                    Log.e("ApiClient", "检查货号存在失败: " + errorMsg);
+                    listener.onError(errorMsg);
+                }
+        );
+
+        requestQueue.add(request);
+    }
     // POST请求方法
     public void postRequest(String url, Map<String, String> params, final ApiResponseListener listener) {
         String fullUrl = BASE_URL + url;
@@ -222,7 +252,9 @@ public class ApiClient {
         params.put("sequence", sequence);
         postRequest("/distribution/delete_single", params, listener);
     }
-
+    public void queryByBillNumber(String billNumber, ApiResponseListener listener) {
+        getRequest("/receiving/query_by_bill_number?bill_number=" + billNumber, listener);
+    }
     public interface ApiResponseListener {
         void onSuccess(JSONObject response);
         void onError(String error);
