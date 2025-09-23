@@ -211,7 +211,7 @@ public class ReceivingActivity extends AppCompatActivity {
                             JSONArray barcodeList = data.getJSONArray("barcode_list");
 
                             StringBuilder message = new StringBuilder();
-                            message.append("明细表商品存在检查结果：\n");
+                            message.append("明细表商品已存在结果：\n");
                             message.append("总数：").append(totalCount).append("\n");
                             message.append("重复数：").append(existsCount);
 
