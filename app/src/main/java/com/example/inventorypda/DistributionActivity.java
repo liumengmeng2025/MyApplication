@@ -3,6 +3,7 @@ package com.example.inventorypda;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Typeface;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -33,6 +34,7 @@ public class DistributionActivity extends AppCompatActivity {
     private TextView tvLoading;
     private List<DistributionItem> currentItems;
     private ApiClient apiClient;
+    private MediaPlayer deleteSuccessSound; // 添加MediaPlayer用于播放声音
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +48,9 @@ public class DistributionActivity extends AppCompatActivity {
 
         // 初始化ApiClient
         apiClient = ApiClient.getInstance(this);
+
+        // 初始化删除成功音效
+        initializeDeleteSound();
 
         // 查询按钮事件
         Button btnQuery = findViewById(R.id.btnQuery);
@@ -64,6 +69,48 @@ public class DistributionActivity extends AppCompatActivity {
                 deleteDistribution();
             }
         });
+    }
+
+    // 初始化删除成功音效
+    private void initializeDeleteSound() {
+        try {
+            // 从raw资源文件夹加载delete_success_sound音频文件
+            deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
+            if (deleteSuccessSound != null) {
+                deleteSuccessSound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+                        // 播放完成后释放资源
+                        mp.release();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            Log.e("InventoryPDA", "初始化删除音效失败: " + e.getMessage());
+        }
+    }
+
+    // 播放删除成功音效
+    private void playDeleteSuccessSound() {
+        try {
+            if (deleteSuccessSound != null) {
+                if (deleteSuccessSound.isPlaying()) {
+                    deleteSuccessSound.seekTo(0); // 如果正在播放，重置到开始位置
+                } else {
+                    // 重新创建MediaPlayer实例，因为之前的可能已经被释放
+                    deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
+                    deleteSuccessSound.start();
+                }
+            } else {
+                // 如果MediaPlayer为null，重新初始化
+                initializeDeleteSound();
+                if (deleteSuccessSound != null) {
+                    deleteSuccessSound.start();
+                }
+            }
+        } catch (Exception e) {
+            Log.e("InventoryPDA", "播放删除音效失败: " + e.getMessage());
+        }
     }
 
     // 查询分货数据（核心修改：修复ApiResponseListener的onSuccess参数类型）
@@ -170,14 +217,17 @@ public class DistributionActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // 执行删除操作（无需修改，已正确使用JSONObject）
+    // 执行删除操作（添加语音提示）
     private void performDeleteDistribution(String barcode) {
         apiClient.deleteDistribution(barcode, new ApiClient.ApiResponseListener() {
             @Override
             public void onSuccess(JSONObject response) {
                 try {
                     if (response.getBoolean("success")) {
+                        // 显示Toast提示
                         Toast.makeText(DistributionActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                        // 播放删除成功音效
+                        playDeleteSuccessSound();
                         clearTable();
                         currentItems = null;
                     } else if (response.has("error")) {
@@ -241,7 +291,7 @@ public class DistributionActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // 删除单个分货记录（无需修改，已正确使用JSONObject）
+    // 删除单个分货记录（添加语音提示）
     private void deleteSingleDistribution(DistributionItem item, int position) {
         String barcode = etBarcode.getText().toString().trim();
         if (barcode.isEmpty()) {
@@ -254,7 +304,10 @@ public class DistributionActivity extends AppCompatActivity {
             public void onSuccess(JSONObject response) {
                 try {
                     if (response.getBoolean("success")) {
+                        // 显示Toast提示
                         Toast.makeText(DistributionActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                        // 播放删除成功音效
+                        playDeleteSuccessSound();
                         // 从当前列表中移除该项并刷新表格
                         if (currentItems != null && position < currentItems.size()) {
                             currentItems.remove(position);
@@ -294,6 +347,19 @@ public class DistributionActivity extends AppCompatActivity {
         int childCount = tableLayout.getChildCount();
         if (childCount > 1) {
             tableLayout.removeViews(1, childCount - 1);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 释放MediaPlayer资源
+        if (deleteSuccessSound != null) {
+            if (deleteSuccessSound.isPlaying()) {
+                deleteSuccessSound.stop();
+            }
+            deleteSuccessSound.release();
+            deleteSuccessSound = null;
         }
     }
 

@@ -1,27 +1,36 @@
-package example.inventorypda;
+package com.example.inventorypda;
 
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.core.content.FileProvider;
+
 import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 
 public class AppUpdateChecker {
 
     private static final String GITHUB_RELEASE_URL = "https://api.github.com/repos/liumengmeng2025/MyApplication/releases/latest";
-    private static final String TAG = "AppUpdateChecker"; // 添加日志标签
+    private static final String TAG = "AppUpdateChecker";
 
     public static void checkForUpdate(Context context, boolean showToast) {
         new UpdateCheckTask(context, showToast).execute();
@@ -43,8 +52,9 @@ public class AppUpdateChecker {
                 URL url = new URL(GITHUB_RELEASE_URL);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
-                connection.setConnectTimeout(15000); // 15秒超时
+                connection.setConnectTimeout(15000);
                 connection.setReadTimeout(15000);
+                connection.setRequestProperty("User-Agent", "MyInventoryApp-Update-Checker");
 
                 Log.d(TAG, "Connecting to: " + GITHUB_RELEASE_URL);
                 connection.connect();
@@ -52,12 +62,18 @@ public class AppUpdateChecker {
                 int responseCode = connection.getResponseCode();
                 Log.d(TAG, "Response code: " + responseCode);
 
+                if (responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
+                    Log.w(TAG, "GitHub API rate limit may be exceeded, will retry with browser_download_url");
+                    return "RATE_LIMIT";
+                }
+
                 if (responseCode != HttpURLConnection.HTTP_OK) {
                     Log.e(TAG, "HTTP error response: " + responseCode);
                     return null;
                 }
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                InputStream inputStream = connection.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                 StringBuilder stringBuilder = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -65,7 +81,7 @@ public class AppUpdateChecker {
                 }
 
                 String response = stringBuilder.toString();
-                Log.d(TAG, "API Response: " + response); // 记录完整响应
+                Log.d(TAG, "API Response received, length: " + response.length());
                 return response;
             } catch (Exception e) {
                 Log.e(TAG, "Error in doInBackground: ", e);
@@ -79,50 +95,62 @@ public class AppUpdateChecker {
 
         @Override
         protected void onPostExecute(String result) {
+            if ("RATE_LIMIT".equals(result)) {
+                String downloadUrl = "https://github.com/liumengmeng2025/MyApplication/releases/latest/download/app-release.apk";
+                Log.w(TAG, "GitHub API limited, using direct download: " + downloadUrl);
+                showUpdateDialog(context, "最新版本", "检测到新版本，请更新", downloadUrl);
+                return;
+            }
+
             if (result != null) {
                 try {
                     JSONObject release = new JSONObject(result);
                     String latestVersion = release.getString("tag_name").replace("v", "");
-                    String downloadUrl = release.getJSONArray("assets")
-                            .getJSONObject(0)
-                            .getString("browser_download_url");
-                    String releaseNotes = release.getString("body");
+
+                    String downloadUrl = null;
+                    try {
+                        downloadUrl = release.getJSONArray("assets")
+                                .getJSONObject(0)
+                                .getString("browser_download_url");
+                    } catch (Exception e) {
+                        Log.w(TAG, "No assets found, using tag download URL");
+                        downloadUrl = "https://github.com/liumengmeng2025/MyApplication/releases/latest/download/app-release.apk";
+                    }
+
+                    String releaseNotes = release.optString("body", "有新版本可用，请更新以获取最新功能。");
 
                     PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                     String currentVersion = pInfo.versionName;
 
-                    // 添加详细日志
-                    Log.d(TAG, "Current version: " + currentVersion);
-                    Log.d(TAG, "Latest version from server: " + latestVersion);
-                    Log.d(TAG, "Download URL: " + downloadUrl);
+                    Log.d(TAG, "Current version: " + currentVersion + ", Latest version: " + latestVersion);
 
                     if (isNewVersionAvailable(currentVersion, latestVersion)) {
-                        Log.d(TAG, "New version available, showing dialog");
                         showUpdateDialog(context, latestVersion, releaseNotes, downloadUrl);
-                    } else {
-                        Log.d(TAG, "No new version available");
-                        if (showToast) {
-                            Toast.makeText(context, "已经是最新版本", Toast.LENGTH_SHORT).show();
-                        }
+                    } else if (showToast) {
+                        Toast.makeText(context, "已经是最新版本", Toast.LENGTH_SHORT).show();
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Error parsing response: ", e);
                     if (showToast) {
-                        Toast.makeText(context, "检查更新失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        showErrorToast("解析更新信息失败");
                     }
                 }
             } else {
                 Log.e(TAG, "API response is null");
                 if (showToast) {
-                    Toast.makeText(context, "检查更新失败: 无法获取更新信息", Toast.LENGTH_SHORT).show();
+                    showErrorToast("网络连接失败，请检查网络");
                 }
             }
+        }
+
+        private void showErrorToast(String message) {
+            new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show());
         }
     }
 
     private static boolean isNewVersionAvailable(String currentVersion, String latestVersion) {
         try {
-            // 移除可能存在的"v"前缀
             currentVersion = currentVersion.replace("v", "");
             latestVersion = latestVersion.replace("v", "");
 
@@ -147,76 +175,140 @@ public class AppUpdateChecker {
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(context);
         builder.setTitle("发现新版本 " + version)
                 .setMessage(notes.isEmpty() ? "有新版本可用，请更新以获取最新功能。" : notes)
-                .setPositiveButton("立即更新", (dialog, which) -> downloadAndInstallApk(context, downloadUrl))
+                .setPositiveButton("立即更新", (dialog, which) -> downloadApkDirectly(context, downloadUrl))
                 .setNegativeButton("取消", null)
                 .setCancelable(false)
                 .show();
     }
 
-    private static void downloadAndInstallApk(Context context, String downloadUrl) {
-        try {
-            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl));
-            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "MyApplication.apk");
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+    private static void downloadApkDirectly(Context context, String downloadUrl) {
+        // 针对PDA设备的特殊处理
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            Toast.makeText(context, "正在下载更新包，请稍候...", Toast.LENGTH_LONG).show();
+        }
+        new DirectDownloadTask(context).execute(downloadUrl);
+    }
 
-            DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-            long downloadId = downloadManager.enqueue(request);
-            Log.d(TAG, "Download started with ID: " + downloadId);
+    private static class DirectDownloadTask extends AsyncTask<String, Integer, Boolean> {
+        private Context context;
+        private File apkFile;
 
-            // 监听下载完成
-            new Thread(() -> {
-                boolean downloading = true;
-                while (downloading) {
-                    try {
-                        Thread.sleep(1000); // 每秒检查一次
-                        DownloadManager.Query query = new DownloadManager.Query();
-                        query.setFilterById(downloadId);
-                        android.database.Cursor cursor = downloadManager.query(query);
-                        if (cursor.moveToFirst()) {
-                            int status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
-                            if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                                downloading = false;
-                                String apkUri = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
-                                Log.d(TAG, "Download completed: " + apkUri);
-                                installApk(context, apkUri);
-                            } else if (status == DownloadManager.STATUS_FAILED) {
-                                downloading = false;
-                                Log.e(TAG, "Download failed");
-                                // 在主线程中显示Toast
-                                new android.os.Handler(context.getMainLooper()).post(() -> {
-                                    Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT).show();
-                                });
-                            }
-                        }
-                        cursor.close();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error monitoring download: ", e);
-                        downloading = false;
+        DirectDownloadTask(Context context) {
+            this.context = context;
+        }
+
+        @Override
+        protected Boolean doInBackground(String... urls) {
+            HttpURLConnection connection = null;
+            FileOutputStream outputStream = null;
+
+            try {
+                URL url = new URL(urls[0]);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(30000);
+                connection.setReadTimeout(30000);
+                connection.setRequestProperty("User-Agent", "MyInventoryApp-Downloader");
+
+                Log.d(TAG, "Starting direct download from: " + urls[0]);
+                connection.connect();
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    Log.e(TAG, "Download failed, response code: " + responseCode);
+                    return false;
+                }
+
+                File downloadsDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "MyAppUpdates");
+                if (!downloadsDir.exists()) {
+                    downloadsDir.mkdirs();
+                }
+
+                apkFile = new File(downloadsDir, "MyApplication_v" + System.currentTimeMillis() + ".apk");
+
+                InputStream inputStream = new BufferedInputStream(connection.getInputStream());
+                outputStream = new FileOutputStream(apkFile);
+
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                long totalRead = 0;
+                int contentLength = connection.getContentLength();
+
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                    totalRead += bytesRead;
+
+                    if (contentLength > 0) {
+                        int progress = (int) (totalRead * 100 / contentLength);
+                        publishProgress(progress);
                     }
                 }
-            }).start();
 
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting download: ", e);
-            Toast.makeText(context, "下载失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                outputStream.flush();
+                Log.d(TAG, "Download completed, file size: " + apkFile.length() + " bytes");
+                return true;
+
+            } catch (Exception e) {
+                Log.e(TAG, "Direct download error: ", e);
+                if (apkFile != null && apkFile.exists()) {
+                    apkFile.delete();
+                }
+                return false;
+            } finally {
+                try {
+                    if (outputStream != null) outputStream.close();
+                    if (connection != null) connection.disconnect();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing resources: ", e);
+                }
+            }
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            Log.d(TAG, "Download progress: " + values[0] + "%");
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success && apkFile != null) {
+                installApk(context, apkFile);
+            } else {
+                Toast.makeText(context, "下载失败，请检查网络连接", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
-    private static void installApk(Context context, String apkPath) {
+    private static void installApk(Context context, File apkFile) {
         try {
-            File file = new File(Uri.parse(apkPath).getPath());
-            Uri apkUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
+            Log.d(TAG, "Installing APK from: " + apkFile.getAbsolutePath());
 
-            Intent intent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-            intent.setData(apkUri);
-            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
-            intent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
+            if (!apkFile.exists() || !apkFile.canRead()) {
+                Toast.makeText(context, "APK文件不存在或不可读", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            Uri apkUri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", apkFile);
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            List<ResolveInfo> resInfoList = context.getPackageManager()
+                    .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            for (ResolveInfo resolveInfo : resInfoList) {
+                String packageName = resolveInfo.activityInfo.packageName;
+                context.grantUriPermission(packageName, apkUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
 
             context.startActivity(intent);
+            Log.d(TAG, "Install intent started successfully");
+
         } catch (Exception e) {
             Log.e(TAG, "Error installing APK: ", e);
-            Toast.makeText(context, "安装失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "安装失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 }

@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
-import example.inventorypda.AppUpdateChecker; // 添加这行导入
 
 public class MainMenuActivity extends AppCompatActivity {
 
