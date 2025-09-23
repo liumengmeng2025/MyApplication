@@ -195,39 +195,45 @@ public class ReceivingActivity extends AppCompatActivity {
         }
     }
 
-    // 新增：检查货号是否存在方法
+    /// 修改后的检查货号是否存在方法
     private void checkBarcodeExists() {
-        String barcode = etBarcode.getText().toString().trim();
-        if (barcode.isEmpty()) {
-            Toast.makeText(this, "请输入商品货号", Toast.LENGTH_SHORT).show();
-            etBarcode.requestFocus();
-            return;
-        }
+        Toast.makeText(this, "正在检查明细表中所有商品是否存在...", Toast.LENGTH_SHORT).show();
 
-        playSound(checkExistsSound);
-        Toast.makeText(this, "正在检查货号是否存在...", Toast.LENGTH_SHORT).show();
-
-        apiClient.checkBarcodeExists(barcode, new ApiClient.ApiResponseListener() {
+        apiClient.checkBarcodeExistence(new ApiClient.ApiResponseListener() {
             @Override
             public void onSuccess(JSONObject response) {
                 runOnUiThread(() -> {
                     try {
                         if (response.getBoolean("success")) {
                             JSONObject data = response.getJSONObject("data");
-                            boolean exists = data.getBoolean("exists");
-                            String checkedBarcode = data.getString("barcode");
+                            int totalCount = data.getInt("total_count");
+                            int existsCount = data.getInt("exists_count");
+                            JSONArray barcodeList = data.getJSONArray("barcode_list");
 
-                            if (exists) {
-                                // 只有在存在重复时才播放dialog_sound
+                            StringBuilder message = new StringBuilder();
+                            message.append("明细表商品存在性检查结果：\n");
+                            message.append("总商品数：").append(totalCount).append("\n");
+                            message.append("已存在数：").append(existsCount);
+
+                            // 如果有存在的商品，显示详细信息
+                            if (existsCount > 0) {
+                                message.append("\n\n已存在的商品货号：");
+                                for (int i = 0; i < barcodeList.length(); i++) {
+                                    JSONObject item = barcodeList.getJSONObject(i);
+                                    if (item.getBoolean("exists")) {
+                                        message.append("\n• ").append(item.getString("barcode"));
+                                    }
+                                }
+                                // 有重复时播放提示音
                                 playSound(dialogSound);
-                                Toast.makeText(ReceivingActivity.this,
-                                        "商品货号 " + checkedBarcode + " 在收货表中已存在",
-                                        Toast.LENGTH_LONG).show();
-                            } else {
-                                Toast.makeText(ReceivingActivity.this,
-                                        "商品货号 " + checkedBarcode + " 在收货表中不存在",
-                                        Toast.LENGTH_LONG).show();
                             }
+
+                            new AlertDialog.Builder(ReceivingActivity.this)
+                                    .setTitle("检查结果")
+                                    .setMessage(message.toString())
+                                    .setPositiveButton("确定", null)
+                                    .show();
+
                         } else {
                             String errorMsg = response.optString("message", "检查失败");
                             Toast.makeText(ReceivingActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
@@ -246,7 +252,6 @@ public class ReceivingActivity extends AppCompatActivity {
             }
         });
     }
-
     private void showDeleteConfirmDialog(ReceivingItem item) {
         // 点击删除弹出对话框时播放shanchu_success
         playSound(shanchuSuccessSound);

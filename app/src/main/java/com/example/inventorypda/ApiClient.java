@@ -70,37 +70,12 @@ public class ApiClient {
 
         addToRequestQueue(request);
     }
-    /**
-     * 检查货号是否存在
-     */
-    public void checkBarcodeExists(String barcode, ApiResponseListener listener) {
-        String url = BASE_URL + "/receiving/check_barcode_exists?barcode=" + barcode;
-
-        JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.GET,
-                url,
-                null,
-                response -> {
-                    Log.d("ApiClient", "检查货号存在成功: " + response.toString());
-                    listener.onSuccess(response);
-                },
-                error -> {
-                    // 简化错误处理
-                    String errorMsg = "网络请求失败";
-                    if (error != null && error.getMessage() != null) {
-                        errorMsg = error.getMessage();
-                    }
-                    if (error != null && error.networkResponse != null) {
-                        errorMsg = "HTTP错误: " + error.networkResponse.statusCode;
-                    }
-
-                    Log.e("ApiClient", "检查货号存在失败: " + errorMsg);
-                    listener.onError(errorMsg);
-                }
-        );
-
-        requestQueue.add(request);
+    // 修改检查货号存在的方法
+    public void checkBarcodeExistence(ApiResponseListener listener) {
+        getRequest("/receiving/check_barcode_existence", listener);
     }
+    // 8. 检查明细表中商品货号是否存在（新增实现）
+
     // POST请求方法
     public void postRequest(String url, Map<String, String> params, final ApiResponseListener listener) {
         String fullUrl = BASE_URL + url;
