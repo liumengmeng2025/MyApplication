@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-  
-</PreferenceScreen>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-path
+        android:name="external"
+        android:path="." />
+    <external-files-path
+        android:name="external_files"
+        android:path="." />
+    <cache-path
+        android:name="cache"
+        android:path="." />
+    <external-cache-path
+        android:name="external_cache"
+        android:path="." />
+    <files-path
+        android:name="files"
+        android:path="." />
+</paths>

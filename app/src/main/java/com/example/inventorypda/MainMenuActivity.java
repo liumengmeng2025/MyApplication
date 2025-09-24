@@ -1,5 +1,4 @@
 package com.example.inventorypda;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -14,6 +13,7 @@ public class MainMenuActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main_menu);
 
         // 检查更新
+
         AppUpdateChecker.checkForUpdate(this, false);
 
         Button btnReceivingDept = findViewById(R.id.btnReceivingDept);
