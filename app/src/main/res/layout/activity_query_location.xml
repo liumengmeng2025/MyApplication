@@ -4,7 +4,15 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="10dp">
-
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="0dp"
+        android:gravity="center"
+        android:text="商品收货查询"
+        android:textColor="#333333"
+        android:textSize="15sp"
+        android:textStyle="bold" />
     <!-- 搜索栏 + 功能按钮 -->
     <LinearLayout
         android:layout_width="match_parent"

@@ -13,7 +13,7 @@
         android:gravity="center"
         android:text="批量绑定区域"
         android:textColor="#333333"
-        android:textSize="20sp"
+        android:textSize="15sp"
         android:textStyle="bold" />
 
     <!-- 查询条件区域 -->
@@ -31,7 +31,7 @@
             android:hint="输入板标前缀"
             android:padding="12dp"
             android:background="@drawable/edittext_border"
-            android:textSize="16sp" />
+            android:textSize="15sp" />
 
         <Button
             android:id="@+id/btnQuery"

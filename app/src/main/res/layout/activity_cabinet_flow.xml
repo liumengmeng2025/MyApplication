@@ -6,17 +6,51 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- 1. 页面标题 -->
+    <!-- 页面标题 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="装柜流水明细"
+        android:text="装柜扫描管理"
         android:textSize="18sp"
         android:textStyle="bold"
         android:layout_gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="0dp"/>
 
-    <!-- 2. 已有流水号明细列表 -->
+    <!-- 1. 提单号导入区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="0dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/etBillNo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="输入提单号"
+            android:minHeight="48dp"/>
+
+        <Button
+            android:id="@+id/btnUpdateData"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#2196F3"
+            android:minHeight="48dp"
+            android:text="更新数据"
+            android:textColor="@android:color/white"/>
+    </LinearLayout>
+
+    <!-- 2. 装柜明细列表 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="装柜箱唛列表："
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
     <ListView
         android:id="@+id/lvCabinetDetails"
         android:layout_width="match_parent"
@@ -26,9 +60,7 @@
         android:dividerHeight="1dp"
         android:layout_marginBottom="16dp"/>
 
-    <!-- 3. 装柜流水扫描区域 -->
-
-    <!-- 4. 第71行：修复后的结果提示TextView（关键！） -->
+    <!-- 3. 操作按钮和扫描区域 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -40,7 +72,6 @@
             android:id="@+id/btnRefreshDetails"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="1dp"
             android:backgroundTint="#4CAF50"
             android:minHeight="48dp"
             android:text="刷新明细"
@@ -50,18 +81,18 @@
             android:id="@+id/etCabinetFlow"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="1dp"
             android:layout_weight="1"
-            android:hint="扫描后1秒自动提交"
+            android:hint="扫描流水号（自动提交）"
             android:inputType="text"
             android:minHeight="48dp" />
     </LinearLayout>
 
+    <!-- 4. 结果提示 -->
     <TextView
         android:id="@+id/tvResult"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:gravity="center"
         android:text=""
         android:textColor="#FF0000"
         android:textSize="14sp" />

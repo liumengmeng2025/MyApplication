@@ -5,7 +5,15 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp">
-
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="0dp"
+        android:gravity="center"
+        android:text="备货查询"
+        android:textColor="#333333"
+        android:textSize="15sp"
+        android:textStyle="bold" />
     <!-- 扫描输入 -->
     <EditText
         android:id="@+id/etBarcode"

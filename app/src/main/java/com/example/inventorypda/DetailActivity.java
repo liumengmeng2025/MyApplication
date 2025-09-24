@@ -2,6 +2,7 @@ package com.example.inventorypda;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -38,6 +39,7 @@ public class DetailActivity extends AppCompatActivity {
     private Button btnSortByLocation;
     private Button btnSortByQuantity;
     private ApiClient apiClient;
+    private MediaPlayer deleteSuccessSound; // 添加MediaPlayer用于播放声音
 
     // 分页相关变量
     private int currentPage = 0;
@@ -66,6 +68,9 @@ public class DetailActivity extends AppCompatActivity {
 
         // 初始化ApiClient
         apiClient = ApiClient.getInstance(this);
+
+        // 初始化删除成功音效
+        initializeDeleteSound();
 
         // 加载所有库存按钮事件
         Button btnLoadAll = findViewById(R.id.btnLoadAll);
@@ -108,13 +113,55 @@ public class DetailActivity extends AppCompatActivity {
             }
         });
 
-        // 下一页按钮事件
+
         btnNextPage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 nextPage();
             }
         });
+    }
+
+    // 初始化删除成功音效
+    private void initializeDeleteSound() {
+        try {
+
+            deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
+            if (deleteSuccessSound != null) {
+                deleteSuccessSound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+                        // 播放完成后释放资源
+                        mp.release();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            Log.e("InventoryPDA", "初始化删除音效失败: " + e.getMessage());
+        }
+    }
+
+    // 播放删除成功音效
+    private void playDeleteSuccessSound() {
+        try {
+            if (deleteSuccessSound != null) {
+                if (deleteSuccessSound.isPlaying()) {
+                    deleteSuccessSound.seekTo(0); // 如果正在播放，重置到开始位置
+                } else {
+                    // 重新创建MediaPlayer实例，因为之前的可能已经被释放
+                    deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
+                    deleteSuccessSound.start();
+                }
+            } else {
+                // 如果MediaPlayer为null，重新初始化
+                initializeDeleteSound();
+                if (deleteSuccessSound != null) {
+                    deleteSuccessSound.start();
+                }
+            }
+        } catch (Exception e) {
+            Log.e("InventoryPDA", "播放删除音效失败: " + e.getMessage());
+        }
     }
 
     // 加载所有库存数据
@@ -361,7 +408,7 @@ public class DetailActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // 删除商品记录
+    // 删除商品记录（添加语音提示）
     private void deleteProduct(final QueryActivity.Product product, final int position) {
         apiClient.deleteProduct(product.商品货号, new ApiClient.ApiResponseListener() {
             @Override
@@ -380,7 +427,10 @@ public class DetailActivity extends AppCompatActivity {
                             }
                             updateTable(currentProducts);
                             updatePageInfo();
+                            // 显示Toast提示
                             Toast.makeText(DetailActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                            // 播放删除成功音效
+                            playDeleteSuccessSound();
                         }
                     } else if (response.has("message")) {
                         Toast.makeText(DetailActivity.this, "删除失败: " + response.getString("message"), Toast.LENGTH_LONG).show();
@@ -416,5 +466,18 @@ public class DetailActivity extends AppCompatActivity {
             tableLayout.removeViews(1, childCount - 1);
         }
         tvPageInfo.setText("无数据");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 释放MediaPlayer资源
+        if (deleteSuccessSound != null) {
+            if (deleteSuccessSound.isPlaying()) {
+                deleteSuccessSound.stop();
+            }
+            deleteSuccessSound.release();
+            deleteSuccessSound = null;
+        }
     }
 }

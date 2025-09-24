@@ -6,7 +6,15 @@
     android:padding="16dp">
 
     <!-- 标题 -->
-
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="0dp"
+        android:gravity="center"
+        android:text="备货数据查询"
+        android:textColor="#333333"
+        android:textSize="15sp"
+        android:textStyle="bold" />
     <!-- 搜索和排序区域 -->
     <LinearLayout
         android:layout_width="match_parent"
