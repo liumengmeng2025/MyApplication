@@ -50,7 +50,7 @@ public class ReceivingActivity extends AppCompatActivity {
     private Handler handler = new Handler();
     private Runnable scanRunnable;
     private long lastInputTime = 0;
-    private static final long SCAN_DELAY = 300;
+    private static final long SCAN_DELAY = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

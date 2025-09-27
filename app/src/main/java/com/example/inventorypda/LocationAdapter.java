@@ -42,7 +42,7 @@ public class LocationAdapter extends ArrayAdapter<QueryLocationActivity.Location
             holder = new ViewHolder();
             holder.tvProduct = convertView.findViewById(R.id.tvProduct);
             holder.tvPlate = convertView.findViewById(R.id.tvPlate);
-            holder.tvArea = convertView.findViewById(R.id.tvArea); // 仅使用现有控件
+            holder.tvArea = convertView.findViewById(R.id.tvArea);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -72,7 +72,6 @@ public class LocationAdapter extends ArrayAdapter<QueryLocationActivity.Location
         return convertView;
     }
 
-    // 日期格式转换：Fri,29 Aug 2025 → 2025/8/29
     private String formatDate(String originalDate) {
         if (originalDate == null || originalDate.isEmpty()) {
             return "未记录";

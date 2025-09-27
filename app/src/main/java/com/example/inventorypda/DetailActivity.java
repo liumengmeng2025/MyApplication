@@ -272,15 +272,23 @@ public class DetailActivity extends AppCompatActivity {
             return;
         }
 
-        Collections.sort(currentProducts, new Comparator<QueryActivity.Product>() {
-            @Override
-            public int compare(QueryActivity.Product p1, QueryActivity.Product p2) {
-                return p1.库位.compareTo(p2.库位);
-            }
-        });
+        try {
+            Collections.sort(currentProducts, new Comparator<QueryActivity.Product>() {
+                @Override
+                public int compare(QueryActivity.Product p1, QueryActivity.Product p2) {
+                    // 安全处理null值
+                    String location1 = (p1.库位 != null) ? p1.库位 : "";
+                    String location2 = (p2.库位 != null) ? p2.库位 : "";
+                    return location1.compareTo(location2);
+                }
+            });
 
-        updateTable(currentProducts);
-        Toast.makeText(this, "已按库位排序", Toast.LENGTH_SHORT).show();
+            updateTable(currentProducts);
+            Toast.makeText(this, "已按库位排序", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("InventoryPDA", "排序失败: " + e.getMessage());
+            Toast.makeText(this, "排序失败，请重试", Toast.LENGTH_SHORT).show();
+        }
     }
 
     // 按数量降序排序
@@ -290,15 +298,20 @@ public class DetailActivity extends AppCompatActivity {
             return;
         }
 
-        Collections.sort(currentProducts, new Comparator<QueryActivity.Product>() {
-            @Override
-            public int compare(QueryActivity.Product p1, QueryActivity.Product p2) {
-                return Integer.compare(p2.要货数量, p1.要货数量);
-            }
-        });
+        try {
+            Collections.sort(currentProducts, new Comparator<QueryActivity.Product>() {
+                @Override
+                public int compare(QueryActivity.Product p1, QueryActivity.Product p2) {
+                    return Integer.compare(p2.要货数量, p1.要货数量);
+                }
+            });
 
-        updateTable(currentProducts);
-        Toast.makeText(this, "已按数量降序排序", Toast.LENGTH_SHORT).show();
+            updateTable(currentProducts);
+            Toast.makeText(this, "已按数量降序排序", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("InventoryPDA", "排序失败: " + e.getMessage());
+            Toast.makeText(this, "排序失败，请重试", Toast.LENGTH_SHORT).show();
+        }
     }
 
     // 上一页

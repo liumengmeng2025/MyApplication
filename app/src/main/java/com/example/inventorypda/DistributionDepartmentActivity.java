@@ -19,7 +19,11 @@ public class DistributionDepartmentActivity extends AppCompatActivity {
         Button btnQueryLocation = findViewById(R.id.btnQueryLocation);
         Button btnCabinetFlow = findViewById(R.id.btnCabinetFlow);
         Button btnBack = findViewById(R.id.btnBack);
-
+        Button btnDoReview = findViewById(R.id.btnDoReview);
+        btnDoReview.setOnClickListener(v -> {
+            Intent intent = new Intent(DistributionDepartmentActivity.this, DoReviewBillActivity.class);
+            startActivity(intent);
+        });
         btnQuery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

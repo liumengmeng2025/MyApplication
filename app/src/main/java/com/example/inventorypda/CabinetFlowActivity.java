@@ -31,8 +31,8 @@ public class CabinetFlowActivity extends AppCompatActivity {
     private Button btnRefreshDetails;
     private Button btnUpdateData;
     private ListView lvCabinetDetails;
-    private EditText etBillNo;  // 改为提单号输入框
-    private EditText etCabinetFlow;  // 装柜流水扫描框
+    private EditText etBillNo;
+    private EditText etCabinetFlow;
     private TextView tvResult;
 
     // 数据与工具
@@ -40,10 +40,10 @@ public class CabinetFlowActivity extends AppCompatActivity {
     private List<CabinetDetail> cabinetDetailList;
     private CabinetDetailAdapter detailAdapter;
     private MyHandler handler;
-    private MediaPlayer mediaPlayerError;  // 错误提示音
-    private MediaPlayer mediaPlayerSuccess; // 成功提示音
+    private MediaPlayer mediaPlayerError;
+    private MediaPlayer mediaPlayerSuccess;
     private long lastInputTime = 0;
-    private static final long AUTO_SUBMIT_DELAY = 1000; // 恢复为1秒
+    private static final long AUTO_SUBMIT_DELAY = 100; // 恢复为1秒
     private static final int MSG_SUBMIT = 1001;
 
     @Override

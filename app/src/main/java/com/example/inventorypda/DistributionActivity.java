@@ -34,7 +34,7 @@ public class DistributionActivity extends AppCompatActivity {
     private TextView tvLoading;
     private List<DistributionItem> currentItems;
     private ApiClient apiClient;
-    private MediaPlayer deleteSuccessSound; // 添加MediaPlayer用于播放声音
+    private MediaPlayer deleteSuccessSound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,14 +95,14 @@ public class DistributionActivity extends AppCompatActivity {
         try {
             if (deleteSuccessSound != null) {
                 if (deleteSuccessSound.isPlaying()) {
-                    deleteSuccessSound.seekTo(0); // 如果正在播放，重置到开始位置
+                    deleteSuccessSound.seekTo(0);
                 } else {
-                    // 重新创建MediaPlayer实例，因为之前的可能已经被释放
+
                     deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
                     deleteSuccessSound.start();
                 }
             } else {
-                // 如果MediaPlayer为null，重新初始化
+
                 initializeDeleteSound();
                 if (deleteSuccessSound != null) {
                     deleteSuccessSound.start();

@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp"
+        android:layout_marginBottom="3dp"
         android:text="配发部"
         android:gravity="center"
         android:textColor="#333333"
@@ -20,8 +20,8 @@
     <Button
         android:id="@+id/btnQuery"
         android:layout_width="200dp"
-        android:layout_height="60dp"
-        android:layout_marginBottom="1dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="0dp"
         android:backgroundTint="#2196F3"
         android:text="备货查询"
         android:textColor="#FFFFFF"
@@ -30,8 +30,8 @@
     <Button
         android:id="@+id/btnDetail"
         android:layout_width="200dp"
-        android:layout_height="60dp"
-        android:layout_marginBottom="1dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="0dp"
         android:backgroundTint="#4CAF50"
         android:text="备货明细"
         android:textColor="#FFFFFF"
@@ -40,18 +40,26 @@
     <Button
         android:id="@+id/btnDistribution"
         android:layout_width="200dp"
-        android:layout_height="60dp"
-        android:layout_marginBottom="1dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="0dp"
         android:backgroundTint="#FF9800"
         android:text="手工分货"
         android:textColor="#FFFFFF"
         android:textSize="18sp" />
-
+    <Button
+        android:id="@+id/btnDoReview"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="0dp"
+        android:backgroundTint="#9C27B0"
+        android:text="DO单复核"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
     <Button
         android:id="@+id/btnQueryLocation"
         android:layout_width="200dp"
-        android:layout_height="60dp"
-        android:layout_marginBottom="1dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="0dp"
         android:backgroundTint="#795548"
         android:text="收货记录查询"
         android:textColor="#FFFFFF"
@@ -60,7 +68,7 @@
     <Button
         android:id="@+id/btnCabinetFlow"
         android:layout_width="200dp"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:layout_marginBottom="1dp"
         android:backgroundTint="#215E21"
         android:text="装柜扫描"
@@ -70,11 +78,11 @@
     <Button
         android:id="@+id/btnBack"
         android:layout_width="120dp"
-        android:layout_height="50dp"
+        android:layout_height="40dp"
         android:layout_marginTop="2dp"
         android:backgroundTint="#999999"
         android:text="返回"
         android:textColor="#FFFFFF"
-        android:textSize="16sp" />
+        android:textSize="15sp" />
 
 </LinearLayout>

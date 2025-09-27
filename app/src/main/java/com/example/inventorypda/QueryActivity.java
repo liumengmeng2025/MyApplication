@@ -36,10 +36,11 @@ public class QueryActivity extends AppCompatActivity {
     private ApiClient apiClient;
     private MediaPlayer mediaPlayer;
     private MediaPlayer notExistMediaPlayer;
+    private MediaPlayer scanSuccessMediaPlayer;
 
     // 防抖查询相关
     private Handler debounceHandler;
-    private static final int DEBOUNCE_DELAY = 1000; // 1秒防抖
+    private static final int DEBOUNCE_DELAY = 100;
     private Runnable queryRunnable;
 
     @Override
@@ -59,6 +60,9 @@ public class QueryActivity extends AppCompatActivity {
 
         // 初始化MediaPlayer - 商品不存在声音
         notExistMediaPlayer = MediaPlayer.create(this, R.raw.not_exist_sound);
+
+        // 初始化MediaPlayer - 查询成功声音
+        scanSuccessMediaPlayer = MediaPlayer.create(this, R.raw.scan_success_sound);
 
         // 初始化防抖Handler
         debounceHandler = new Handler();
@@ -104,6 +108,10 @@ public class QueryActivity extends AppCompatActivity {
         if (notExistMediaPlayer != null) {
             notExistMediaPlayer.release();
             notExistMediaPlayer = null;
+        }
+        if (scanSuccessMediaPlayer != null) {
+            scanSuccessMediaPlayer.release();
+            scanSuccessMediaPlayer = null;
         }
 
         // 移除所有回调
@@ -194,6 +202,8 @@ public class QueryActivity extends AppCompatActivity {
                                 if (currentProducts != null && !currentProducts.isEmpty()) {
                                     updateTable();
                                     Toast.makeText(QueryActivity.this, "找到 " + currentProducts.size() + " 条记录", Toast.LENGTH_SHORT).show();
+                                    // 新增：查询有结果时播放成功语音
+                                    playScanSuccessSound();
                                 } else {
                                     clearTable();
                                     Toast.makeText(QueryActivity.this, "无匹配数据", Toast.LENGTH_SHORT).show();
@@ -341,6 +351,21 @@ public class QueryActivity extends AppCompatActivity {
                 notExistMediaPlayer.start();
             } catch (Exception e) {
                 Log.e("InventoryPDA", "播放商品不存在声音失败: " + e.getMessage());
+            }
+        }
+    }
+
+    // 新增：播放查询成功声音
+    private void playScanSuccessSound() {
+        if (scanSuccessMediaPlayer != null) {
+            try {
+                if (scanSuccessMediaPlayer.isPlaying()) {
+                    scanSuccessMediaPlayer.stop();
+                }
+                scanSuccessMediaPlayer.seekTo(0);
+                scanSuccessMediaPlayer.start();
+            } catch (Exception e) {
+                Log.e("InventoryPDA", "播放查询成功声音失败: " + e.getMessage());
             }
         }
     }
