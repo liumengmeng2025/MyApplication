@@ -38,7 +38,7 @@ public class DoReviewDetailActivity extends AppCompatActivity {
     private LinearLayout productDetailLayout;
 
     private ApiClient apiClient;
-    private MediaPlayer errorSound, exceedSound, scanSuccessSound;
+    private MediaPlayer errorSound, exceedSound; // 移除了scanSuccessSound
 
     private String currentBillNumber;
     private int totalQuantity;
@@ -113,7 +113,7 @@ public class DoReviewDetailActivity extends AppCompatActivity {
         try {
             errorSound = MediaPlayer.create(this, R.raw.error_sound);
             exceedSound = MediaPlayer.create(this, R.raw.exceed_sound);
-            scanSuccessSound = MediaPlayer.create(this, R.raw.scan_success_sound);
+            // 移除了scanSuccessSound的初始化
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -496,8 +496,7 @@ public class DoReviewDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // 播放扫描成功音效（在调用API之前播放）
-        playSound(scanSuccessSound);
+        // 移除了扫描成功音效播放
 
         // 更新复核数量
         updateReviewedQuantity(productCode, (int) newReviewedQty);
@@ -587,8 +586,7 @@ public class DoReviewDetailActivity extends AppCompatActivity {
                         Toast.makeText(this, "不能超过开单数量", Toast.LENGTH_SHORT).show();
                         viewHolder.etReviewed.setText(String.valueOf((int) currentReviewedQty));
                     } else if (newQty != currentReviewedQty) {
-                        // 手动更新时也播放成功音效
-                        playSound(scanSuccessSound);
+                        // 移除了手动更新时的成功音效
                         updateReviewedQuantity(productCode, newQty);
                     }
                     // 更新完成后聚焦到主输入框
@@ -859,9 +857,7 @@ public class DoReviewDetailActivity extends AppCompatActivity {
         if (exceedSound != null) {
             exceedSound.release();
         }
-        if (scanSuccessSound != null) {
-            scanSuccessSound.release();
-        }
+        // 移除了scanSuccessSound的释放
     }
 
     // ViewHolder内部类

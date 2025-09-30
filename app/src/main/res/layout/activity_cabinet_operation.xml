@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="1dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:gravity="center"
+        android:text="装柜操作"
+        android:textColor="#333333"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <!-- 提单号输入行 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="0dp">
+
+        <EditText
+            android:id="@+id/etBillNumber"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:hint="输入提单号"
+            android:inputType="text"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnFixBillNumber"
+            android:layout_width="120dp"
+            android:layout_height="40dp"
+            android:layout_marginLeft="10dp"
+            android:backgroundTint="#4CAF50"
+            android:text="固定提单号"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- 搜索栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="1dp">
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:hint="输入商品货号或板标"
+            android:inputType="text"
+            android:textSize="12sp" />
+        <Button
+            android:id="@+id/btnCabinetQuery"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="0.4"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:backgroundTint="#FF9800"
+            android:text="装柜查询"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- 功能按钮行 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="1dp">
+
+        <Button
+            android:id="@+id/btnByProduct"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginRight="5dp"
+            android:backgroundTint="#4CAF50"
+            android:text="按商品查"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnByPlate"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:backgroundTint="#2196F3"
+            android:text="按板标查"
+            android:textSize="12sp" />
+        <Button
+            android:id="@+id/btnCabinetScan"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginRight="5dp"
+            android:backgroundTint="#9C27B0"
+            android:text="装柜扫描"
+            android:textSize="12sp" />
+
+
+    </LinearLayout>
+
+    <!-- 第二行功能按钮 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="0dp">
+
+
+
+        <Button
+            android:id="@+id/btnUnbind"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="5dp"
+            android:backgroundTint="#FF0000"
+            android:text="批量解绑"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- 当前提单号显示 -->
+    <TextView
+        android:id="@+id/tvCurrentBillNumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="1dp"
+        android:gravity="center"
+        android:text="当前提单号：未固定"
+        android:textColor="#666666"
+        android:textSize="12sp"
+        android:textStyle="italic" />
+
+    <!-- 明细列表 -->
+    <ListView
+        android:id="@+id/lvItems"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:dividerHeight="2dp"/>
+
+</LinearLayout>

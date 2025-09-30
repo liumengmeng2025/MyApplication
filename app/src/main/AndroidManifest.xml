@@ -3,11 +3,11 @@
     package="com.example.inventorypda"
     xmlns:tools="http://schemas.android.com/tools">
 
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -27,6 +27,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <!-- DO单复核相关Activity -->
         <activity
             android:name=".DoReviewBillActivity"
@@ -37,10 +38,13 @@
         <activity
             android:name=".DoReviewDifferenceActivity"
             android:exported="false" />
+
         <!-- 新添加的部门选择Activity -->
         <activity
             android:name=".ReceivingDepartmentActivity"
             android:exported="false" />
+
+        <!-- 修复这里：改为独立的 DistributionDepartmentActivity -->
         <activity
             android:name=".DistributionDepartmentActivity"
             android:exported="false" />
@@ -65,20 +69,30 @@
         <activity
             android:name=".ReceivingActivity"
             android:exported="false" />
+
         <!-- 绑定区域界面 -->
         <activity
             android:name=".BindAreaActivity"
             android:exported="false" />
+
         <!-- 查询库位界面 -->
+        <activity
+            android:name=".CabinetOperationActivity"
+            android:label="装柜操作"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".QueryLocationActivity"
             android:exported="false" />
+
         <activity
             android:name=".CabinetFlowActivity"
             android:exported="false"/>
+
         <activity
             android:name=".AreaQueryActivity"
             android:exported="false"/>
+
         <activity
             android:name=".CabinetWithdrawActivity"
             android:exported="false" />

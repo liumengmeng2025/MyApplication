@@ -13,6 +13,7 @@ public class DistributionDepartmentActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_distribution_department);
 
+        // 初始化所有按钮
         Button btnQuery = findViewById(R.id.btnQuery);
         Button btnDetail = findViewById(R.id.btnDetail);
         Button btnDistribution = findViewById(R.id.btnDistribution);
@@ -20,50 +21,36 @@ public class DistributionDepartmentActivity extends AppCompatActivity {
         Button btnCabinetFlow = findViewById(R.id.btnCabinetFlow);
         Button btnBack = findViewById(R.id.btnBack);
         Button btnDoReview = findViewById(R.id.btnDoReview);
+
+        // 设置按钮点击事件
         btnDoReview.setOnClickListener(v -> {
             Intent intent = new Intent(DistributionDepartmentActivity.this, DoReviewBillActivity.class);
             startActivity(intent);
         });
-        btnQuery.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(DistributionDepartmentActivity.this, QueryActivity.class));
-            }
+
+        btnQuery.setOnClickListener(v -> {
+            startActivity(new Intent(DistributionDepartmentActivity.this, QueryActivity.class));
         });
 
-        btnDetail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(DistributionDepartmentActivity.this, DetailActivity.class));
-            }
+        btnDetail.setOnClickListener(v -> {
+            startActivity(new Intent(DistributionDepartmentActivity.this, DetailActivity.class));
         });
 
-        btnDistribution.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(DistributionDepartmentActivity.this, DistributionActivity.class));
-            }
+        btnDistribution.setOnClickListener(v -> {
+            startActivity(new Intent(DistributionDepartmentActivity.this, DistributionActivity.class));
         });
 
-        btnQueryLocation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(DistributionDepartmentActivity.this, QueryLocationActivity.class));
-            }
+        btnQueryLocation.setOnClickListener(v -> {
+            startActivity(new Intent(DistributionDepartmentActivity.this, QueryLocationActivity.class));
         });
 
-        btnCabinetFlow.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(DistributionDepartmentActivity.this, CabinetFlowActivity.class));
-            }
+        // 装柜操作按钮 - 打开 CabinetOperationActivity
+        btnCabinetFlow.setOnClickListener(v -> {
+            startActivity(new Intent(DistributionDepartmentActivity.this, CabinetOperationActivity.class));
         });
 
-        btnBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
+        btnBack.setOnClickListener(v -> {
+            finish();
         });
     }
 }

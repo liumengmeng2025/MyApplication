@@ -26,6 +26,11 @@ public class DoReviewBillActivity extends AppCompatActivity {
     private Handler autoQueryHandler = new Handler();
     private Runnable autoQueryRunnable;
 
+    // 防抖相关变量
+    private static final long AUTO_QUERY_DELAY = 500; //
+    private static final int MIN_BILL_NUMBER_LENGTH = 11; // 最小单据号长度
+    private boolean isQueryInProgress = false; // 防止重复查询
+
     // 语音播放器
     private MediaPlayer mediaPlayer;
 
@@ -64,23 +69,35 @@ public class DoReviewBillActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 String billNumber = s.toString().trim();
-                // 移除回车符和换行符
-                billNumber = removeEnterAndNewline(billNumber);
-                if (!billNumber.equals(s.toString())) {
-                    etBillNumber.setText(billNumber);
-                    etBillNumber.setSelection(billNumber.length());
+
+                // 检测是否包含换行符
+                if (billNumber.contains("\n") || billNumber.contains("\r")) {
+                    // 移除换行符并直接查询
+                    String cleanBillNumber = removeEnterAndNewline(billNumber);
+                    if (!cleanBillNumber.isEmpty()) {
+                        // 设置清理后的文本（不含换行符）
+                        etBillNumber.setText(cleanBillNumber);
+                        etBillNumber.setSelection(cleanBillNumber.length());
+
+                        // 直接查询，不清空输入框
+                        queryDoBill();
+                    }
                     return;
                 }
 
-                if (billNumber.length() > 0) {
-                    // 移除之前的回调
-                    if (autoQueryRunnable != null) {
-                        autoQueryHandler.removeCallbacks(autoQueryRunnable);
-                    }
+                // 移除之前的回调
+                if (autoQueryRunnable != null) {
+                    autoQueryHandler.removeCallbacks(autoQueryRunnable);
+                }
 
-                    // 1秒后自动查询
-                    autoQueryRunnable = () -> queryDoBill();
-                    autoQueryHandler.postDelayed(autoQueryRunnable, 100);
+                // 只有满足最小长度时才自动查询
+                if (billNumber.length() >= MIN_BILL_NUMBER_LENGTH && !isQueryInProgress) {
+                    autoQueryRunnable = () -> {
+                        if (!isQueryInProgress) {
+                            queryDoBill();
+                        }
+                    };
+                    autoQueryHandler.postDelayed(autoQueryRunnable, AUTO_QUERY_DELAY);
                 }
             }
         });
@@ -95,15 +112,27 @@ public class DoReviewBillActivity extends AppCompatActivity {
     }
 
     private void queryDoBill() {
+        // 防止重复查询
+        if (isQueryInProgress) {
+            return;
+        }
+
         String inputBillNumber = etBillNumber.getText().toString().trim();
         // 处理回车符和换行符
-        final String billNumber = removeEnterAndNewline(inputBillNumber); // 使用 final 变量
+        final String billNumber = removeEnterAndNewline(inputBillNumber);
 
         if (billNumber.isEmpty()) {
             Toast.makeText(this, "请输入单据号", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // 检查最小长度
+        if (billNumber.length() < MIN_BILL_NUMBER_LENGTH) {
+            Toast.makeText(this, "单据号长度不足", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        isQueryInProgress = true;
         tvLoading.setVisibility(TextView.VISIBLE);
 
         // 创建一个final的局部变量供lambda使用
@@ -113,6 +142,7 @@ public class DoReviewBillActivity extends AppCompatActivity {
             @Override
             public void onSuccess(org.json.JSONObject response) {
                 runOnUiThread(() -> {
+                    isQueryInProgress = false;
                     tvLoading.setVisibility(TextView.GONE);
                     try {
                         if (response.getBoolean("success")) {
@@ -126,31 +156,35 @@ public class DoReviewBillActivity extends AppCompatActivity {
 
                                 // 跳转到复核明细界面
                                 Intent intent = new Intent(DoReviewBillActivity.this, DoReviewDetailActivity.class);
-                                intent.putExtra("bill_number", finalBillNumber); // 使用final变量
+                                intent.putExtra("bill_number", finalBillNumber);
                                 intent.putExtra("total_quantity", totalQuantity);
                                 startActivity(intent);
-                            } else {
-                                // 没有明细数据，播报错误语音并清空输入框
-                                playSound(R.raw.error_sound2);
+
+                                // 跳转后清空输入框，为下次输入做准备
                                 etBillNumber.setText("");
-                                etBillNumber.requestFocus();
+                            } else {
+                                // 没有明细数据，播报错误语音
+                                playSound(R.raw.error_sound2);
                                 Toast.makeText(DoReviewBillActivity.this,
                                         "单号不存在", Toast.LENGTH_LONG).show();
+                                // 不清空输入框，只聚焦
+                                etBillNumber.requestFocus();
                             }
                         } else {
-                            // 单据不存在或其他错误，播报错误语音并清空输入框
+                            // 单据不存在或其他错误，播报错误语音
                             playSound(R.raw.error_sound);
-                            etBillNumber.setText("");
-                            etBillNumber.requestFocus();
                             Toast.makeText(DoReviewBillActivity.this,
                                     response.getString("message"), Toast.LENGTH_LONG).show();
+                            // 不清空输入框，只聚焦
+                            etBillNumber.requestFocus();
                         }
                     } catch (JSONException e) {
-                        // 数据解析错误，播报错误语音并清空输入框
+                        isQueryInProgress = false;
+                        // 数据解析错误，播报错误语音
                         playSound(R.raw.error_sound);
-                        etBillNumber.setText("");
-                        etBillNumber.requestFocus();
                         Toast.makeText(DoReviewBillActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
+                        // 不清空输入框，只聚焦
+                        etBillNumber.requestFocus();
                     }
                 });
             }
@@ -158,22 +192,22 @@ public class DoReviewBillActivity extends AppCompatActivity {
             @Override
             public void onError(String error) {
                 runOnUiThread(() -> {
+                    isQueryInProgress = false;
                     tvLoading.setVisibility(TextView.GONE);
-                    // 网络错误，播报错误语音并清空输入框
+                    // 网络错误，播报错误语音
                     playSound(R.raw.error_sound);
-                    etBillNumber.setText("");
-                    etBillNumber.requestFocus();
                     Toast.makeText(DoReviewBillActivity.this, "查询失败: " + error, Toast.LENGTH_LONG).show();
+                    // 不清空输入框，只聚焦
+                    etBillNumber.requestFocus();
                 });
             }
         });
     }
+
     /**
      * 播放语音文件
-     * @param soundResourceId 语音文件资源ID（如R.raw.success_sound）
      */
     private void playSound(int soundResourceId) {
-        // 先释放之前的媒体播放器
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
@@ -197,15 +231,15 @@ public class DoReviewBillActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // 移除回调防止内存泄漏
         if (autoQueryRunnable != null) {
             autoQueryHandler.removeCallbacks(autoQueryRunnable);
         }
 
-        // 释放媒体播放器
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+
+        isQueryInProgress = false;
     }
 }

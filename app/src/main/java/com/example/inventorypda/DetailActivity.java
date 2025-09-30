@@ -2,6 +2,7 @@ package com.example.inventorypda;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
@@ -113,7 +114,6 @@ public class DetailActivity extends AppCompatActivity {
             }
         });
 
-
         btnNextPage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -125,7 +125,6 @@ public class DetailActivity extends AppCompatActivity {
     // 初始化删除成功音效
     private void initializeDeleteSound() {
         try {
-
             deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
             if (deleteSuccessSound != null) {
                 deleteSuccessSound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
