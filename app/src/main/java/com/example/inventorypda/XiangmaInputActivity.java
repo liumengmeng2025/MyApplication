@@ -25,19 +25,22 @@ public class XiangmaInputActivity extends AppCompatActivity {
     private RadioButton rbAutoSave, rbBatchSave;
 
     private MediaPlayer duplicatePlayer;
-    private List<Map<String, Object>> tempList;
-    private SimpleAdapter adapter;
+    private MediaPlayer saveSuccessPlayer;  // 保存成功语音
+    private MediaPlayer deleteSuccessPlayer; // 删除成功语音
+    private MediaPlayer scanSuccessPlayer;   // 扫描成功语音
+
     private Handler autoSaveHandler = new Handler();
     private Runnable autoSaveRunnable;
 
     private ApiClient apiClient;
     private static final String TAG = "XiangmaInput";
 
+    // 添加缺失的变量声明
+    private List<Map<String, Object>> tempList;
+    private SimpleAdapter adapter;
+
     // 延迟时间设为400毫秒
     private static final int AUTO_SAVE_DELAY = 400;
-
-    // 分公司相关变量
-    private String selectedBranch = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +52,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
 
         initViews();
         setupListeners();
-        initMediaPlayer();
+        initMediaPlayer();  // 初始化所有媒体播放器
         initTempList();
 
         updateModeUI(true);
@@ -84,8 +87,13 @@ public class XiangmaInputActivity extends AppCompatActivity {
             }
         });
 
-        btnBatchSave.setOnClickListener(v -> saveBatchXiangma());
-        btnClearAll.setOnClickListener(v -> clearTempList());
+        btnBatchSave.setOnClickListener(v -> {
+            // 批量保存时弹出分公司选择
+            showBranchSelectionForBatchSave();
+        });
+
+        btnClearAll.setOnClickListener(v -> showClearAllConfirmDialog()); // 修改：显示确认对话框
+
         btnScan.setOnClickListener(v -> startBarcodeScan());
 
         // 自动保存监听 - 延迟改为400毫秒
@@ -107,12 +115,18 @@ public class XiangmaInputActivity extends AppCompatActivity {
                     autoSaveRunnable = () -> {
                         String currentText = etXiangma.getText().toString().trim();
                         if (!TextUtils.isEmpty(currentText)) {
-                            // 自动保存模式下，直接弹出分公司选择
+                            // 播放扫描成功提示音
+                            playSound(scanSuccessPlayer);
+
                             if (rbAutoSave.isChecked()) {
+                                // 自动保存模式：弹出分公司选择
                                 showBranchSelectionDialog(currentText, true);
                             } else {
-                                // 批量保存模式下，弹出分公司选择添加到列表
-                                showBranchSelectionDialog(currentText, false);
+                                // 批量保存模式：直接添加到列表（不选择分公司）
+                                addToTempList(currentText, "", "待保存");
+                                etXiangma.setText("");
+                                etXiangma.requestFocus();
+                                showStatus("已自动添加到列表，共 " + tempList.size() + " 条待保存", true);
                             }
                         }
                     };
@@ -124,35 +138,164 @@ public class XiangmaInputActivity extends AppCompatActivity {
     }
 
     /**
-     * 显示分公司选择对话框
+     * 初始化所有媒体播放器
+     */
+    private void initMediaPlayer() {
+        try {
+            // 初始化重复提醒语音
+            int duplicateSoundResId = getResources().getIdentifier("duplicate_alert", "raw", getPackageName());
+            if (duplicateSoundResId != 0) {
+                duplicatePlayer = MediaPlayer.create(this, duplicateSoundResId);
+            } else {
+                Log.w(TAG, "语音文件 duplicate_alert 未找到");
+            }
+
+            // 初始化保存成功语音
+            int saveSuccessResId = getResources().getIdentifier("save_success_sound", "raw", getPackageName());
+            if (saveSuccessResId != 0) {
+                saveSuccessPlayer = MediaPlayer.create(this, saveSuccessResId);
+            } else {
+                Log.w(TAG, "语音文件 save_success_sound 未找到");
+            }
+
+            // 初始化删除成功语音
+            int deleteSuccessResId = getResources().getIdentifier("delete_success_sound", "raw", getPackageName());
+            if (deleteSuccessResId != 0) {
+                deleteSuccessPlayer = MediaPlayer.create(this, deleteSuccessResId);
+            } else {
+                Log.w(TAG, "语音文件 delete_success_sound 未找到");
+            }
+
+            // 初始化扫描成功语音
+            int scanSuccessResId = getResources().getIdentifier("scan_success_sound", "raw", getPackageName());
+            if (scanSuccessResId != 0) {
+                scanSuccessPlayer = MediaPlayer.create(this, scanSuccessResId);
+            } else {
+                Log.w(TAG, "语音文件 scan_success_sound 未找到");
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "初始化语音播放器失败", e);
+        }
+    }
+
+    /**
+     * 播放语音的通用方法
+     */
+    private void playSound(MediaPlayer soundPlayer) {
+        if (soundPlayer != null) {
+            try {
+                if (soundPlayer.isPlaying()) {
+                    soundPlayer.seekTo(0);
+                } else {
+                    soundPlayer.start();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "播放语音失败", e);
+            }
+        }
+    }
+
+    /**
+     * 显示清空列表确认对话框
+     */
+    private void showClearAllConfirmDialog() {
+        if (tempList.isEmpty()) {
+            showStatus("暂存列表为空", false);
+            return;
+        }
+
+        int unsavedCount = 0;
+        for (Map<String, Object> item : tempList) {
+            if (!(Boolean) item.get("saved")) {
+                unsavedCount++;
+            }
+        }
+
+        if (unsavedCount == 0) {
+            showStatus("没有需要清空的记录", true);
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("确认清空")
+                .setMessage("是否清空所有 " + unsavedCount + " 条未保存的记录？")
+                .setPositiveButton("确认", (dialog, which) -> {
+                    clearTempList();
+                    playSound(deleteSuccessPlayer); // 播放删除成功语音
+                })
+                .setNegativeButton("取消", (dialog, which) -> dialog.dismiss())
+                .setCancelable(false)
+                .show();
+    }
+
+    /**
+     * 显示分公司选择对话框（单条保存）
      */
     private void showBranchSelectionDialog(String xiangma, boolean isAutoSave) {
-        selectedBranch = ""; // 重置选择
-
         String[] branches = {"新加坡", "马来西亚", "柬埔寨", "越南", "泰缅", "印尼"};
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("选择分公司 - 箱唛: " + xiangma);
 
         builder.setSingleChoiceItems(branches, -1, (dialog, which) -> {
-            selectedBranch = branches[which];
+            String selectedBranch = branches[which];
+            if (isAutoSave) {
+                // 自动保存模式：直接保存到服务器
+                saveToServerWithBranch(xiangma, selectedBranch);
+            } else {
+                // 单条保存模式：添加到暂存列表
+                addToTempList(xiangma, selectedBranch, "待保存");
+                etXiangma.setText("");
+                etXiangma.requestFocus();
+                showStatus("已添加到列表，共 " + tempList.size() + " 条待保存", true);
+            }
+            dialog.dismiss();
         });
 
-        builder.setPositiveButton("确认", (dialog, which) -> {
-            if (!selectedBranch.isEmpty()) {
-                if (isAutoSave) {
-                    // 自动保存模式：直接保存到服务器
-                    saveToServerWithBranch(xiangma, selectedBranch);
-                } else {
-                    // 批量保存模式：添加到暂存列表
-                    addToTempList(xiangma, selectedBranch, "待保存");
-                    etXiangma.setText("");
-                    etXiangma.requestFocus();
-                    showStatus("已自动添加到列表，共 " + tempList.size() + " 条待保存", true);
-                }
-            } else {
-                Toast.makeText(this, "请选择分公司", Toast.LENGTH_SHORT).show();
+        builder.setNegativeButton("取消", (dialog, which) -> {
+            dialog.dismiss();
+        });
+
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    /**
+     * 显示分公司选择对话框（批量保存）
+     */
+    private void showBranchSelectionForBatchSave() {
+        if (tempList.isEmpty()) {
+            showStatus("暂存列表为空", false);
+            return;
+        }
+
+        List<Map<String, Object>> unsavedList = new ArrayList<>();
+        for (Map<String, Object> item : tempList) {
+            if (!(Boolean) item.get("saved")) {
+                unsavedList.add(item);
             }
+        }
+
+        if (unsavedList.isEmpty()) {
+            showStatus("没有需要保存的记录", true);
+            return;
+        }
+
+        String[] branches = {"新加坡", "马来西亚", "柬埔寨", "越南", "泰缅", "印尼"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("选择分公司 - 批量保存 " + unsavedList.size() + " 条记录");
+
+        builder.setSingleChoiceItems(branches, -1, (dialog, which) -> {
+            String selectedBranch = branches[which];
+            // 为所有未保存的记录设置分公司并保存
+            for (Map<String, Object> item : unsavedList) {
+                item.put("branch", selectedBranch);
+            }
+            saveBatchItems(unsavedList, 0);
+            dialog.dismiss();
         });
 
         builder.setNegativeButton("取消", (dialog, which) -> {
@@ -178,19 +321,6 @@ public class XiangmaInputActivity extends AppCompatActivity {
         }
     }
 
-    private void initMediaPlayer() {
-        try {
-            int soundResId = getResources().getIdentifier("duplicate_alert", "raw", getPackageName());
-            if (soundResId != 0) {
-                duplicatePlayer = MediaPlayer.create(this, soundResId);
-            } else {
-                Log.w(TAG, "语音文件 duplicate_alert 未找到");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "初始化语音播放器失败", e);
-        }
-    }
-
     private void initTempList() {
         tempList = new ArrayList<>();
         adapter = new SimpleAdapter(this, tempList,
@@ -206,7 +336,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
                 // 显示分公司信息
                 TextView tvBranch = view.findViewById(R.id.tvBranch);
                 String branch = (String) item.get("branch");
-                tvBranch.setText("分公司: " + (branch != null ? branch : "未选择"));
+                tvBranch.setText("分公司: " + (branch != null && !branch.isEmpty() ? branch : "未选择"));
 
                 Button btnDelete = view.findViewById(R.id.btnDelete);
                 btnDelete.setOnClickListener(v -> {
@@ -214,6 +344,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
                     updateListCount();
                     adapter.notifyDataSetChanged();
                     showStatus("已从列表中删除", true);
+                    playSound(deleteSuccessPlayer); // 播放删除成功语音
                 });
 
                 return view;
@@ -225,10 +356,10 @@ public class XiangmaInputActivity extends AppCompatActivity {
     }
 
     private void addToTempList(String xiangma, String branch, String status) {
-        // 检查是否已存在（相同的箱唛和分公司）
+        // 检查是否已存在（相同的箱唛）
         for (Map<String, Object> existing : tempList) {
-            if (xiangma.equals(existing.get("xiangma")) && branch.equals(existing.get("branch"))) {
-                showStatus("箱唛已存在于列表中（相同分公司）", false);
+            if (xiangma.equals(existing.get("xiangma"))) {
+                showStatus("箱唛已存在于列表中", false);
                 return;
             }
         }
@@ -263,6 +394,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
                         addToTempList(xiangma, branch, "保存成功");
                         etXiangma.setText("");
                         etXiangma.requestFocus();
+                        playSound(saveSuccessPlayer); // 播放保存成功语音
                     } else {
                         String error = response.getString("error");
                         showStatus("保存失败: " + error, false);
@@ -288,37 +420,24 @@ public class XiangmaInputActivity extends AppCompatActivity {
         });
     }
 
-    private void saveBatchXiangma() {
-        if (tempList.isEmpty()) {
-            showStatus("暂存列表为空", false);
-            return;
-        }
-
-        List<Map<String, Object>> unsavedList = new ArrayList<>();
-        for (Map<String, Object> item : tempList) {
-            if (!(Boolean) item.get("saved")) {
-                unsavedList.add(item);
-            }
-        }
-
-        if (unsavedList.isEmpty()) {
-            showStatus("没有需要保存的记录", true);
-            return;
-        }
-
-        showStatus("开始批量保存 " + unsavedList.size() + " 条记录...", true);
-        saveBatchItems(unsavedList, 0);
-    }
-
     private void saveBatchItems(List<Map<String, Object>> items, int index) {
         if (index >= items.size()) {
             showStatus("批量保存完成", true);
+            playSound(saveSuccessPlayer); // 播放保存成功语音
             return;
         }
 
         Map<String, Object> item = items.get(index);
         String xiangma = (String) item.get("xiangma");
         String branch = (String) item.get("branch");
+
+        if (branch == null || branch.isEmpty()) {
+            // 如果没有分公司，跳过这条记录
+            showStatus("跳过无分公司的记录: " + xiangma, false);
+            saveBatchItems(items, index + 1);
+            return;
+        }
+
         saveBatchItemToServer(xiangma, branch, items, index);
     }
 
@@ -357,7 +476,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
 
     private void updateItemStatus(String xiangma, String branch, String status) {
         for (Map<String, Object> item : tempList) {
-            if (xiangma.equals(item.get("xiangma")) && branch.equals(item.get("branch"))) {
+            if (xiangma.equals(item.get("xiangma"))) {
                 item.put("status", status);
                 item.put("saved", status.equals("保存成功"));
                 break;
@@ -393,17 +512,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
     }
 
     private void playDuplicateAlert() {
-        if (duplicatePlayer != null) {
-            try {
-                if (duplicatePlayer.isPlaying()) {
-                    duplicatePlayer.stop();
-                }
-                duplicatePlayer.seekTo(0);
-                duplicatePlayer.start();
-            } catch (Exception e) {
-                Log.e(TAG, "播放语音失败", e);
-            }
-        }
+        playSound(duplicatePlayer);
     }
 
     private void showStatus(String message, boolean isSuccess) {
@@ -430,9 +539,19 @@ public class XiangmaInputActivity extends AppCompatActivity {
         if (autoSaveRunnable != null) {
             autoSaveHandler.removeCallbacks(autoSaveRunnable);
         }
-        if (duplicatePlayer != null) {
-            duplicatePlayer.release();
-            duplicatePlayer = null;
+        // 释放所有媒体播放器
+        releaseMediaPlayer(duplicatePlayer);
+        releaseMediaPlayer(saveSuccessPlayer);
+        releaseMediaPlayer(deleteSuccessPlayer);
+        releaseMediaPlayer(scanSuccessPlayer);
+    }
+
+    /**
+     * 释放媒体播放器的通用方法
+     */
+    private void releaseMediaPlayer(MediaPlayer player) {
+        if (player != null) {
+            player.release();
         }
     }
 }
