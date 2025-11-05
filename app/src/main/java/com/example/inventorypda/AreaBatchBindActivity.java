@@ -139,11 +139,11 @@ public class AreaBatchBindActivity extends AppCompatActivity {
 
     private void showBatchBindDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("批量绑定区域");
-        builder.setMessage("将把所有以 \"" + etPlatePrefix.getText().toString() + "\" 开头的板标绑定到指定区域");
+        builder.setTitle("批量绑定柜号");
+        builder.setMessage("将把所有以 \"" + etPlatePrefix.getText().toString() + "\" 开头的板标绑定到指定柜号");
 
         final EditText input = new EditText(this);
-        input.setHint("请输入区域名称");
+        input.setHint("请输入柜号");
         builder.setView(input);
 
         builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
@@ -153,7 +153,7 @@ public class AreaBatchBindActivity extends AppCompatActivity {
                 if (!area.isEmpty()) {
                     batchBindArea(area);
                 } else {
-                    Toast.makeText(AreaBatchBindActivity.this, "区域不能为空", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AreaBatchBindActivity.this, "柜号不能为空", Toast.LENGTH_SHORT).show();
                 }
             }
         });

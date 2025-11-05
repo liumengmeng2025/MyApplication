@@ -1,4 +1,5 @@
 package com.example.inventorypda;
+
 import java.util.ArrayList;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,22 +31,23 @@ import java.util.Locale;
 public class ReceivingActivity extends AppCompatActivity {
 
     private EditText etPlate, etBarcode;
-    private Button btnScanPlate, btnSave, btnSaveAll, btnClear, btnCheckBarcodeExists;
+    private Button btnScanPlate, btnSave, btnClear;
     private ListView lvItems;
     private TextView tvScanCount;
     private List<ReceivingItem> itemList;
     private ReceivingAdapter adapter;
     private String currentPlate = "";
+    private String selectedBranch = "";
     private ApiClient apiClient;
 
     private MediaPlayer plateFixedSound;
     private MediaPlayer scanSuccessSound;
     private MediaPlayer saveSuccessSound;
     private MediaPlayer duplicateSound;
-    private MediaPlayer dialogSound; // 对话框提示音
-    private MediaPlayer deleteSuccessSound; // 删除成功提示音
-    private MediaPlayer checkExistsSound; // 检查存在提示音
-    private MediaPlayer shanchuSuccessSound; // 点击删除弹出对话框时播放
+    private MediaPlayer dialogSound;
+    private MediaPlayer deleteSuccessSound;
+    private MediaPlayer checkExistsSound;
+    private MediaPlayer shanchuSuccessSound;
 
     private Handler handler = new Handler();
     private Runnable scanRunnable;
@@ -68,10 +70,10 @@ public class ReceivingActivity extends AppCompatActivity {
             scanSuccessSound = MediaPlayer.create(this, R.raw.scan_success_sound);
             saveSuccessSound = MediaPlayer.create(this, R.raw.save_success_sound);
             duplicateSound = MediaPlayer.create(this, R.raw.duplicate_beep);
-            dialogSound = MediaPlayer.create(this, R.raw.dialog_sound); // 初始化对话框提示音
-            deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound); // 删除成功后播放
-            checkExistsSound = MediaPlayer.create(this, R.raw.dialog_sound); // 检查存在提示音
-            shanchuSuccessSound = MediaPlayer.create(this, R.raw.shanchu_success); // 点击删除弹出对话框时播放
+            dialogSound = MediaPlayer.create(this, R.raw.dialog_sound);
+            deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
+            checkExistsSound = MediaPlayer.create(this, R.raw.dialog_sound);
+            shanchuSuccessSound = MediaPlayer.create(this, R.raw.shanchu_success);
         } catch (Exception e) {
             Log.e("SoundError", "无法加载声音文件", e);
         }
@@ -96,9 +98,7 @@ public class ReceivingActivity extends AppCompatActivity {
         etBarcode = findViewById(R.id.etBarcode);
         btnScanPlate = findViewById(R.id.btnScanPlate);
         btnSave = findViewById(R.id.btnSave);
-        btnSaveAll = findViewById(R.id.btnSaveAll);
         btnClear = findViewById(R.id.btnClear);
-        btnCheckBarcodeExists = findViewById(R.id.btnCheckBarcodeExists);
         lvItems = findViewById(R.id.lvItems);
         tvScanCount = findViewById(R.id.tvScanCount);
 
@@ -128,12 +128,7 @@ public class ReceivingActivity extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> saveReceiving());
 
-        btnSaveAll.setOnClickListener(v -> saveAllReceiving());
-
         btnClear.setOnClickListener(v -> clearCurrentTemp());
-
-        // 新增：检查货号是否存在按钮点击事件
-        btnCheckBarcodeExists.setOnClickListener(v -> checkBarcodeExists());
 
         etBarcode.addTextChangedListener(new TextWatcher() {
             @Override
@@ -176,6 +171,35 @@ public class ReceivingActivity extends AppCompatActivity {
         });
     }
 
+    private void showBranchSelectionDialog() {
+        selectedBranch = ""; // 重置选择
+
+        String[] branches = {"新加坡", "马来西亚", "柬埔寨", "越南", "泰缅", "印尼"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("选择分公司");
+
+        builder.setSingleChoiceItems(branches, -1, (dialog, which) -> {
+            selectedBranch = branches[which];
+        });
+
+        builder.setPositiveButton("确认保存", (dialog, which) -> {
+            if (!selectedBranch.isEmpty()) {
+                performSaveWithBranch();
+            } else {
+                Toast.makeText(this, "请选择分公司", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("取消", (dialog, which) -> {
+            dialog.dismiss();
+        });
+
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -195,65 +219,7 @@ public class ReceivingActivity extends AppCompatActivity {
         }
     }
 
-    /// 修改后的检查货号是否存在方法
-    private void checkBarcodeExists() {
-        Toast.makeText(this, "正在检查明细表中所有商品是否存在...", Toast.LENGTH_SHORT).show();
-
-        apiClient.checkBarcodeExistence(new ApiClient.ApiResponseListener() {
-            @Override
-            public void onSuccess(JSONObject response) {
-                runOnUiThread(() -> {
-                    try {
-                        if (response.getBoolean("success")) {
-                            JSONObject data = response.getJSONObject("data");
-                            int totalCount = data.getInt("total_count");
-                            int existsCount = data.getInt("exists_count");
-                            JSONArray barcodeList = data.getJSONArray("barcode_list");
-
-                            StringBuilder message = new StringBuilder();
-                            message.append("明细表商品已存在结果：\n");
-                            message.append("总数：").append(totalCount).append("\n");
-                            message.append("重复数：").append(existsCount);
-
-                            // 如果有存在的商品，显示详细信息
-                            if (existsCount > 0) {
-                                message.append("\n\n已存在的：");
-                                for (int i = 0; i < barcodeList.length(); i++) {
-                                    JSONObject item = barcodeList.getJSONObject(i);
-                                    if (item.getBoolean("exists")) {
-                                        message.append("\n• ").append(item.getString("barcode"));
-                                    }
-                                }
-                                // 有重复时播放提示音
-                                playSound(dialogSound);
-                            }
-
-                            new AlertDialog.Builder(ReceivingActivity.this)
-                                    .setTitle("检查结果")
-                                    .setMessage(message.toString())
-                                    .setPositiveButton("确定", null)
-                                    .show();
-
-                        } else {
-                            String errorMsg = response.optString("message", "检查失败");
-                            Toast.makeText(ReceivingActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
-                        Log.e("CheckBarcode", "解析失败", e);
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                runOnUiThread(() ->
-                        Toast.makeText(ReceivingActivity.this, "检查失败: " + error, Toast.LENGTH_SHORT).show());
-            }
-        });
-    }
     private void showDeleteConfirmDialog(ReceivingItem item) {
-        // 点击删除弹出对话框时播放shanchu_success
         playSound(shanchuSuccessSound);
         new AlertDialog.Builder(this)
                 .setTitle("确认删除")
@@ -273,7 +239,6 @@ public class ReceivingActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     try {
                         if (response.getBoolean("success")) {
-                            // 删除成功后播放delete_success_sound
                             playSound(deleteSuccessSound);
                             Toast.makeText(ReceivingActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
                             loadTempItems();
@@ -312,8 +277,13 @@ public class ReceivingActivity extends AppCompatActivity {
                     String message = response.getString("message");
                     Toast.makeText(ReceivingActivity.this, message, Toast.LENGTH_SHORT).show();
 
-                    if (message.contains("已添加") || message.contains("已存在")) {
+                    boolean existsInTemp = response.optBoolean("exists_in_temp", false);
+                    boolean existsInMain = response.optBoolean("exists_in_main", true);
+
+                    if (existsInTemp) {
                         playSound(duplicateSound);
+                    } else if (!existsInMain) {
+                        playSound(deleteSuccessSound);
                     } else {
                         playSound(scanSuccessSound);
                     }
@@ -328,6 +298,11 @@ public class ReceivingActivity extends AppCompatActivity {
 
             @Override
             public void onError(String error) {
+                if (error.contains("已存在") || error.contains("重复")) {
+                    playSound(duplicateSound);
+                } else if (error.contains("不存在")) {
+                    playSound(deleteSuccessSound);
+                }
                 handleError("添加商品失败: " + error);
             }
 
@@ -408,11 +383,10 @@ public class ReceivingActivity extends AppCompatActivity {
                             boolean hasDuplicates = response.getJSONObject("data").getBoolean("has_duplicates");
 
                             if (hasDuplicates) {
-                                // 只有在有重复时才播放dialog_sound
                                 playSound(dialogSound);
                                 showDuplicateConfirmDialog();
                             } else {
-                                performSave(false);
+                                showBranchSelectionDialog();
                             }
                         } else {
                             String error = response.getString("message");
@@ -435,14 +409,61 @@ public class ReceivingActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("发现重复商品")
                 .setMessage("收货表中已存在相同商品，是否继续保存？")
-                .setPositiveButton("是", (dialog, which) -> performSave(true))
+                .setPositiveButton("是", (dialog, which) -> showBranchSelectionDialog())
                 .setNegativeButton("否", (dialog, which) -> dialog.dismiss())
                 .setCancelable(false)
                 .show();
     }
 
-    private void performSave(boolean force) {
-        apiClient.saveTempToMain(currentPlate, force, new ApiClient.ApiResponseListener() {
+    private void performSaveWithBranch() {
+        if (selectedBranch.isEmpty()) {
+            Toast.makeText(this, "请选择分公司", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        apiClient.checkBranchBarcodes(currentPlate, selectedBranch, new ApiClient.ApiResponseListener() {
+            @Override
+            public void onSuccess(JSONObject response) {
+                runOnUiThread(() -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            boolean allExist = response.getJSONObject("data").getBoolean("all_exist");
+
+                            if (allExist) {
+                                saveWithBranch(false);
+                            } else {
+                                playSound(dialogSound);
+                                showBranchNotExistConfirmDialog();
+                            }
+                        } else {
+                            String error = response.getString("message");
+                            Toast.makeText(ReceivingActivity.this, "检查分公司商品失败: " + error, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(ReceivingActivity.this, "检查分公司商品失败: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void showBranchNotExistConfirmDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("商品不存在警告")
+                .setMessage("部分商品在分公司 " + selectedBranch + " 中不存在，是否继续保存？")
+                .setPositiveButton("继续保存", (dialog, which) -> saveWithBranch(true))
+                .setNegativeButton("取消", (dialog, which) -> dialog.dismiss())
+                .setCancelable(false)
+                .show();
+    }
+
+    private void saveWithBranch(boolean force) {
+        apiClient.saveTempToMainWithBranch(currentPlate, selectedBranch, force, new ApiClient.ApiResponseListener() {
             @Override
             public void onSuccess(JSONObject response) {
                 runOnUiThread(() -> {
@@ -450,7 +471,7 @@ public class ReceivingActivity extends AppCompatActivity {
                         if (response.getBoolean("success")) {
                             playSound(saveSuccessSound);
                             clearInterface();
-                            Toast.makeText(ReceivingActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ReceivingActivity.this, "保存成功（分公司：" + selectedBranch + "）", Toast.LENGTH_SHORT).show();
                         } else {
                             String error = response.getString("message");
                             Toast.makeText(ReceivingActivity.this, "保存失败: " + error, Toast.LENGTH_SHORT).show();
@@ -468,93 +489,12 @@ public class ReceivingActivity extends AppCompatActivity {
         });
     }
 
-    private void saveAllReceiving() {
-        if (currentPlate.isEmpty()) {
-            Toast.makeText(this, "请先扫描板标", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (itemList.isEmpty()) {
-            Toast.makeText(this, "没有商品可保存", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        apiClient.checkDuplicates(currentPlate, new ApiClient.ApiResponseListener() {
-            @Override
-            public void onSuccess(JSONObject response) {
-                runOnUiThread(() -> {
-                    try {
-                        if (response.getBoolean("success")) {
-                            boolean hasDuplicates = response.getJSONObject("data").getBoolean("has_duplicates");
-
-                            if (hasDuplicates) {
-                                // 只有在有重复时才播放dialog_sound
-                                playSound(dialogSound);
-                                showAllSaveConfirmDialog();
-                            } else {
-                                performAllSave(false);
-                            }
-                        } else {
-                            String error = response.getString("message");
-                            Toast.makeText(ReceivingActivity.this, "检查重复失败: " + error, Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                Toast.makeText(ReceivingActivity.this, "检查重复失败: " + error, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void showAllSaveConfirmDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("发现重复商品")
-                .setMessage("收货表中已存在相同商品，是否强制全部保存？")
-                .setPositiveButton("是", (dialog, which) -> performAllSave(true))
-                .setNegativeButton("否", (dialog, which) -> dialog.dismiss())
-                .setCancelable(false)
-                .show();
-    }
-
-    private void performAllSave(boolean force) {
-        apiClient.saveAllTempToMain(currentPlate, force, new ApiClient.ApiResponseListener() {
-            @Override
-            public void onSuccess(JSONObject response) {
-                runOnUiThread(() -> {
-                    try {
-                        if (response.getBoolean("success")) {
-                            playSound(saveSuccessSound);
-                            clearInterface();
-                            Toast.makeText(ReceivingActivity.this, "全部保存成功", Toast.LENGTH_SHORT).show();
-                        } else {
-                            String error = response.getString("message");
-                            Toast.makeText(ReceivingActivity.this, "全部保存失败: " + error, Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                Toast.makeText(ReceivingActivity.this, "全部保存失败: " + error, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     private void clearCurrentTemp() {
         if (currentPlate.isEmpty()) {
             Toast.makeText(this, "请先扫描板标", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 清空操作使用shanchu_success声音
         playSound(shanchuSuccessSound);
         new AlertDialog.Builder(this)
                 .setTitle("确认清空")
@@ -572,7 +512,6 @@ public class ReceivingActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     try {
                         if (response.getBoolean("success")) {
-                            // 清空成功播放delete_success_sound
                             playSound(deleteSuccessSound);
                             Toast.makeText(ReceivingActivity.this, "清空成功", Toast.LENGTH_SHORT).show();
                             loadTempItems();
@@ -601,6 +540,7 @@ public class ReceivingActivity extends AppCompatActivity {
         itemList.clear();
         adapter.notifyDataSetChanged();
         currentPlate = "";
+        selectedBranch = "";
         updateScanCount();
         etPlate.requestFocus();
     }

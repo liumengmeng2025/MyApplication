@@ -126,7 +126,7 @@ public class AreaQueryActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String area = etAreaInput.getText().toString().trim();
                 if (area.isEmpty()) {
-                    Toast.makeText(AreaQueryActivity.this, "请输入区域名称", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AreaQueryActivity.this, "请输入柜号", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 clearPreviousResult();
@@ -325,7 +325,7 @@ public class AreaQueryActivity extends AppCompatActivity {
                                     // 播放查询成功提示音
 
                                 } else {
-                                    tvNoResult.setText("未查询到该区域的收货记录");
+                                    tvNoResult.setText("未查询到该柜号的收货记录");
                                     tvNoResult.setVisibility(View.VISIBLE);
                                 }
                             } else {
@@ -392,7 +392,7 @@ public class AreaQueryActivity extends AppCompatActivity {
                                         JSONObject item = dataArray.getJSONObject(i);
                                         Log.d("API_DEBUG", "项目 " + i + ": " + item.toString());
 
-                                        String areaName = item.optString("区域", "未知区域");
+                                        String areaName = item.optString("区域", "未知柜号");
                                         String plate = item.optString("板标", "未知板标");
                                         String billNumber = item.optString("提单号", "未设置");
                                         int productCount = item.optInt("商品种类数", 0);

@@ -4,28 +4,31 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="10dp">
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="0dp"
+        android:layout_marginBottom="10dp"
         android:gravity="center"
         android:text="装柜数据查询"
         android:textColor="#333333"
         android:textSize="15sp"
         android:textStyle="bold" />
+
     <EditText
         android:id="@+id/etInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="请输入流水号、板标或提单号"
+        android:hint="请输入商品货号、板标或提单号"
         android:inputType="text"
         android:textSize="14sp" />
 
+    <!-- 第一行按钮：撤回操作 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="0dp">
 
         <Button
             android:id="@+id/btnWithdrawSerial"
@@ -56,6 +59,35 @@
             android:layout_marginStart="5dp"
             android:backgroundTint="#FF9800"
             android:text="提单号查询"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- 第二行按钮：查询操作 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="0dp">
+
+        <Button
+            android:id="@+id/btnQuerySerial"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="5dp"
+            android:backgroundTint="#C0D9D9"
+            android:text="已解绑流水查询"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnQueryPlate"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="5dp"
+            android:backgroundTint="#E9C2A6"
+            android:text="已删板标查询"
             android:textSize="12sp" />
 
     </LinearLayout>

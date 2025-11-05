@@ -70,11 +70,11 @@ public class DoReviewBillActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
                 String billNumber = s.toString().trim();
 
-                // 检测是否包含换行符
+                // 检测是否包含换行符，如果包含则只处理换行符之前的内容
                 if (billNumber.contains("\n") || billNumber.contains("\r")) {
-                    // 移除换行符并直接查询
-                    String cleanBillNumber = removeEnterAndNewline(billNumber);
-                    if (!cleanBillNumber.isEmpty()) {
+                    // 获取换行符之前的内容
+                    String cleanBillNumber = getContentBeforeNewline(billNumber);
+                    if (!cleanBillNumber.isEmpty() && cleanBillNumber.length() >= MIN_BILL_NUMBER_LENGTH) {
                         // 设置清理后的文本（不含换行符）
                         etBillNumber.setText(cleanBillNumber);
                         etBillNumber.setSelection(cleanBillNumber.length());
@@ -104,8 +104,25 @@ public class DoReviewBillActivity extends AppCompatActivity {
     }
 
     /**
-     * 移除字符串中的回车符和换行符
+     * 获取换行符之前的内容
      */
+    private String getContentBeforeNewline(String text) {
+        if (text == null) return "";
+
+        // 找到第一个换行符的位置
+        int newlineIndex = text.indexOf('\n');
+        if (newlineIndex == -1) {
+            newlineIndex = text.indexOf('\r');
+        }
+
+        // 如果有换行符，只返回换行符之前的内容
+        if (newlineIndex != -1) {
+            return text.substring(0, newlineIndex).trim();
+        }
+
+        return text.trim();
+    }
+
     private String removeEnterAndNewline(String text) {
         if (text == null) return "";
         return text.replace("\r", "").replace("\n", "").trim();
@@ -118,8 +135,8 @@ public class DoReviewBillActivity extends AppCompatActivity {
         }
 
         String inputBillNumber = etBillNumber.getText().toString().trim();
-        // 处理回车符和换行符
-        final String billNumber = removeEnterAndNewline(inputBillNumber);
+        // 处理回车符和换行符 - 使用新的方法只获取换行前的内容
+        final String billNumber = getContentBeforeNewline(inputBillNumber);
 
         if (billNumber.isEmpty()) {
             Toast.makeText(this, "请输入单据号", Toast.LENGTH_SHORT).show();

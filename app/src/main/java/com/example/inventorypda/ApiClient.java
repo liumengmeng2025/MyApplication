@@ -1,6 +1,7 @@
 package com.example.inventorypda;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import com.android.volley.Request;
@@ -51,9 +52,64 @@ public class ApiClient {
         return requestQueue;
     }
 
-    /**
-     * 通用GET请求（内部方法）
-     */
+    // 添加请求到队列
+    private void addToRequestQueue(Request<?> request) {
+        getRequestQueue().add(request);
+    }
+
+    // 获取错误消息
+    private String getErrorMessage(VolleyError error) {
+        String errorMsg = "网络错误";
+        if (error.networkResponse != null && error.networkResponse.data != null) {
+            errorMsg = new String(error.networkResponse.data);
+        } else if (error.getMessage() != null) {
+            errorMsg = error.getMessage();
+        }
+        return errorMsg;
+    }
+
+    public void saveXiangma(String xiangma, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/save_xiangma";
+        Map<String, String> params = new HashMap<>();
+        params.put("xiangma", xiangma);
+        makePostRequest(url, params, listener);
+    }
+    // 更换板标接口
+    public void changePlate(String oldPlate, String newPlate, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/change_plate";
+
+        JSONObject params = new JSONObject();
+        try {
+            params.put("old_plate", oldPlate);
+            params.put("new_plate", newPlate);
+        } catch (JSONException e) {
+            Log.e("ApiClient", "创建参数失败", e);
+            listener.onError("参数错误");
+            return;
+        }
+
+        makeJsonPostRequest(url, params, listener);
+    }
+
+    // 清空板标字段接口
+    public void clearPlateFields(String plate, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/clear_plate_fields";
+
+        JSONObject params = new JSONObject();
+        try {
+            params.put("plate", plate);
+        } catch (JSONException e) {
+            Log.e("ApiClient", "创建参数失败", e);
+            listener.onError("参数错误");
+            return;
+        }
+
+        makeJsonPostRequest(url, params, listener);
+    }
+    public void checkXiangmaDuplicate(String xiangma, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/check_xiangma_duplicate?xiangma=" + xiangma;
+        makeGetRequest(url, listener);
+    }
     private void makeGetRequest(String url, final ApiResponseListener listener) {
         Log.d("API Request", "GET: " + url);
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -269,8 +325,6 @@ public class ApiClient {
         makePostRequest(url, params, listener);
     }
 
-    // 其他方法保持不变...
-
     // ======================== 原有收货相关API（保留） ========================
     /**
      * 添加商品到临时表
@@ -437,10 +491,57 @@ public class ApiClient {
         makePostRequest(url, params, listener);
     }
 
+    // ======================== 分公司相关API ========================
+    /**
+     * 检查分公司商品存在性
+     */
+    public void checkBranchBarcodes(String plate, String branch, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/check_branch_barcodes?plate=" + Uri.encode(plate) + "&branch=" + Uri.encode(branch);
+        makeGetRequest(url, listener);
+    }
+
+    /**
+     * 带分公司参数的保存
+     */
+    public void saveTempToMainWithBranch(String plate, String branch, boolean force, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/temp/save";
+        Map<String, String> params = new HashMap<>();
+        params.put("plate", plate);
+        params.put("branch", branch);
+        if (force) {
+            params.put("force", "true");
+        }
+        makePostRequest(url, params, listener);
+    }
+    /**
+     * 检查箱唛在指定分公司是否重复
+     */
+    public void checkXiangmaDuplicateWithBranch(String xiangma, String branch, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/check_xiangma_duplicate_with_branch?xiangma=" +
+                Uri.encode(xiangma) + "&branch=" + Uri.encode(branch);
+        makeGetRequest(url, listener);
+    }
+
+    /**
+     * 保存箱唛（带分公司参数）
+     */
+    public void saveXiangmaWithBranch(String xiangma, String branch, ApiResponseListener listener) {
+        String url = BASE_URL + "/receiving/save_xiangma";
+        Map<String, String> params = new HashMap<>();
+        params.put("xiangma", xiangma);
+        params.put("branch", branch);
+        makePostRequest(url, params, listener);
+    }
+    /**
+     * 通用GET请求
+     */
     public void getRequest(String url, ApiResponseListener listener) {
         makeGetRequest(BASE_URL + url, listener);
     }
 
+    /**
+     * 通用POST请求
+     */
     public void postRequest(String url, Map<String, String> params, ApiResponseListener listener) {
         makePostRequest(BASE_URL + url, params, listener);
     }

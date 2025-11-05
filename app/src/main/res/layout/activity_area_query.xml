@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="0dp"
         android:gravity="center"
-        android:text="区域查询"
+        android:text="批量绑定提单号"
         android:textColor="#333333"
         android:textSize="20sp"
         android:textStyle="bold" />
@@ -20,7 +20,7 @@
         android:id="@+id/et_area_input"
         android:layout_width="match_parent"
         android:layout_height="35dp"
-        android:hint="请输入区域名称或板标"
+        android:hint="请输入柜号或板标"
         android:paddingHorizontal="12dp"
         android:background="@android:drawable/editbox_background_normal"
         android:textSize="16sp" />
@@ -40,7 +40,7 @@
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
             android:backgroundTint="#2196F3"
-            android:text="区域查询"
+            android:text="柜号查询"
             android:textColor="#FFFFFF"
             android:textSize="14sp" />
 

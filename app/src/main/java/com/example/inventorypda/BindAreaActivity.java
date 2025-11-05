@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +35,7 @@ public class BindAreaActivity extends AppCompatActivity {
     private Button btnScanPlate;
     private Button btnBindArea;
     private Button btnUnbind;
+    private Button btnChangePlate;
     private ListView lvItems;
 
     // 数据相关
@@ -85,6 +87,7 @@ public class BindAreaActivity extends AppCompatActivity {
         btnScanPlate = findViewById(R.id.btnScanPlate);
         btnBindArea = findViewById(R.id.btnBindArea);
         btnUnbind = findViewById(R.id.btnUnbind);
+        btnChangePlate = findViewById(R.id.btnChangePlate);
         lvItems = findViewById(R.id.lvItems);
     }
 
@@ -98,11 +101,11 @@ public class BindAreaActivity extends AppCompatActivity {
     private void setupListeners() {
         btnScanPlate.setOnClickListener(v -> loadItemsByPlate());
         btnBindArea.setOnClickListener(v -> showAreaInputDialog());
-        btnUnbind.setOnClickListener(v -> batchDeleteNonEmptyPlateItems());
+        btnUnbind.setOnClickListener(v -> showClearRecordsConfirm());
+        btnChangePlate.setOnClickListener(v -> showChangePlateDialog());
 
         lvItems.setOnItemLongClickListener((parent, view, position, id) -> {
             BindAreaItem item = itemList.get(position);
-            // 修改条件：只要板标不为空就可以删除
             if (item.板标 == null || item.板标.isEmpty()) {
                 Toast.makeText(BindAreaActivity.this, "无法删除板标为空的明细", Toast.LENGTH_SHORT).show();
                 return true;
@@ -114,7 +117,7 @@ public class BindAreaActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy(); // 修复：移除多余的"on"
+        super.onDestroy();
         releaseMediaPlayer(bindSuccessSound);
         releaseMediaPlayer(unbindSuccessSound);
     }
@@ -172,7 +175,7 @@ public class BindAreaActivity extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
                         }
                     } catch (JSONException e) {
-                        Toast.makeText(BindAreaActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(BindAreaActivity.this, "数据重复", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -194,12 +197,12 @@ public class BindAreaActivity extends AppCompatActivity {
 
         final EditText inputArea = new EditText(this);
         new AlertDialog.Builder(this)
-                .setTitle("输入区域")
+                .setTitle("输入柜号")
                 .setView(inputArea)
                 .setPositiveButton("确认", (dialog, which) -> {
                     String area = inputArea.getText().toString().trim();
                     if (area.isEmpty()) {
-                        Toast.makeText(BindAreaActivity.this, "区域不能为空", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(BindAreaActivity.this, "柜号不能为空", Toast.LENGTH_SHORT).show();
                         return;
                     }
                     bindAreaToPlate(plate, area);
@@ -292,7 +295,7 @@ public class BindAreaActivity extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
                         }
                     } catch (JSONException e) {
-                        Toast.makeText(BindAreaActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(BindAreaActivity.this, "数据重复", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -301,6 +304,125 @@ public class BindAreaActivity extends AppCompatActivity {
             public void onError(String error) {
                 runOnUiThread(() -> Toast.makeText(BindAreaActivity.this,
                         "加载失败：" + error, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    // 新增：显示更换板标对话框
+    private void showChangePlateDialog() {
+        String currentPlate = etPlate.getText().toString().trim();
+        if (currentPlate.isEmpty()) {
+            Toast.makeText(this, "请先输入要更换的板标", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 创建包含两个输入框的布局
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 20);
+
+        final EditText etOldPlate = new EditText(this);
+        etOldPlate.setHint("旧板标");
+        etOldPlate.setText(currentPlate);
+        etOldPlate.setEnabled(false); // 旧板标不可编辑
+        layout.addView(etOldPlate);
+
+        final EditText etNewPlate = new EditText(this);
+        etNewPlate.setHint("请输入新板标");
+        layout.addView(etNewPlate);
+
+        new AlertDialog.Builder(this)
+                .setTitle("更换板标")
+                .setView(layout)
+                .setPositiveButton("确认更换", (dialog, which) -> {
+                    String newPlate = etNewPlate.getText().toString().trim();
+                    if (newPlate.isEmpty()) {
+                        Toast.makeText(BindAreaActivity.this, "请输入新板标", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (newPlate.equals(currentPlate)) {
+                        Toast.makeText(BindAreaActivity.this, "新板标不能与旧板标相同", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    changePlate(currentPlate, newPlate);
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    // 新增：更换板标网络请求
+    private void changePlate(String oldPlate, String newPlate) {
+        apiClient.changePlate(oldPlate, newPlate, new ApiClient.ApiResponseListener() {
+            @Override
+            public void onSuccess(JSONObject response) {
+                runOnUiThread(() -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            Toast.makeText(BindAreaActivity.this, "更换板标成功", Toast.LENGTH_SHORT).show();
+                            // 刷新界面
+                            etPlate.setText(newPlate);
+                            loadItemsByPlate();
+                        } else {
+                            Toast.makeText(BindAreaActivity.this,
+                                    response.getString("message"),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Toast.makeText(BindAreaActivity.this, "更换板标失败", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> Toast.makeText(BindAreaActivity.this,
+                        "更换板标失败：" + error, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    // 修改：清空记录确认对话框
+    private void showClearRecordsConfirm() {
+        String plate = etPlate.getText().toString().trim();
+        if (plate.isEmpty()) {
+            Toast.makeText(this, "请输入板标", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("清空记录")
+                .setMessage("确认清空板标 " + plate + " 的所有记录？\n（这将清空板标、商品货号、区域、提单号等字段，但保留记录）")
+                .setPositiveButton("确认清空", (dialog, which) -> clearPlateFields(plate))
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    // 新增：清空板标字段网络请求
+    private void clearPlateFields(String plate) {
+        apiClient.clearPlateFields(plate, new ApiClient.ApiResponseListener() {
+            @Override
+            public void onSuccess(JSONObject response) {
+                runOnUiThread(() -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            Toast.makeText(BindAreaActivity.this, "清空记录成功", Toast.LENGTH_SHORT).show();
+                            // 刷新界面
+                            loadItemsByPlate();
+                        } else {
+                            Toast.makeText(BindAreaActivity.this,
+                                    response.getString("message"),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Toast.makeText(BindAreaActivity.this, "清空记录失败", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> Toast.makeText(BindAreaActivity.this,
+                        "清空记录失败：" + error, Toast.LENGTH_SHORT).show());
             }
         });
     }
@@ -469,7 +591,7 @@ public class BindAreaActivity extends AppCompatActivity {
             BindAreaItem item = items.get(position);
             holder.tvProduct.setText("商品：" + item.商品货号);
             holder.tvPlate.setText("板标：" + item.板标);
-            holder.tvArea.setText("区域：" + (item.区域.isEmpty() ? "未绑定" : item.区域));
+            holder.tvArea.setText("柜号：" + (item.区域.isEmpty() ? "未绑定" : item.区域));
             holder.tvTime.setText("日期：" + formatCreateDate(item.创建时间));
 
             return convertView;

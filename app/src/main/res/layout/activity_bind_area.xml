@@ -5,69 +5,76 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- 第一行：板标输入 + 扫描 + 绑定区域 + 解除绑定 -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="0dp"
-        android:gravity="center"
-        android:text="板标绑定区域"
-        android:textColor="#333333"
-        android:textSize="15sp"
-        android:textStyle="bold" />
+    <!-- 板标输入区域 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:layout_marginBottom="0dp">
 
         <EditText
             android:id="@+id/etPlate"
             android:layout_width="0dp"
-            android:layout_height="35dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginTop="0dp"
-            android:hint="扫描板标"
-            android:textSize="13sp"
-            android:inputType="text"/>
+            android:hint="请输入板标"
+            android:imeOptions="actionDone"
+            android:inputType="text" />
 
         <Button
             android:id="@+id/btnScanPlate"
             android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:text="扫描"
-            android:backgroundTint="#4CAF50"
-            android:textSize="12sp"
-            android:layout_marginLeft="8dp"/>
-
-        <Button
-            android:id="@+id/btnBindArea"
-            android:layout_width="wrap_content"
-            android:layout_height="35dp"
+            android:layout_height="wrap_content"
+            android:text="查询"
             android:backgroundTint="#2196F3"
-            android:text="绑定区域"
-            android:textSize="12sp"
-            android:layout_marginLeft="8dp"/>
+            android:layout_marginStart="8dp" />
 
     </LinearLayout>
 
-    <!-- 明细列表 -->
-
-    <Button
-        android:id="@+id/btnUnbind"
+    <!-- 按钮区域 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_marginBottom="8dp"
-        android:backgroundTint="#FF0000"
-        android:text="批量解绑"
-        android:textSize="12sp" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="0dp">
 
+        <Button
+            android:id="@+id/btnBindArea"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="绑定柜号"
+            android:backgroundTint="#4CAF50"
+            android:layout_marginEnd="0dp" />
+
+        <Button
+            android:id="@+id/btnChangePlate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="0dp"
+            android:layout_weight="1"
+            android:backgroundTint="#FF9800"
+            android:text="更换板标" />
+
+        <Button
+            android:id="@+id/btnUnbind"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="清空记录"
+            android:backgroundTint="#FF0000"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="0dp" />
+
+        <!-- 新增的更换板标按钮 -->
+
+    </LinearLayout>
+
+    <!-- 列表显示区域 -->
     <ListView
         android:id="@+id/lvItems"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:dividerHeight="8dp"/> <!-- 列表项之间的间距 -->
+        android:layout_weight="1" />
 
 </LinearLayout>

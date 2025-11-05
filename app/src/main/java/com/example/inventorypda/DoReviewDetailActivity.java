@@ -130,6 +130,24 @@ public class DoReviewDetailActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 String code = s.toString().trim();
+
+                // 检测是否包含换行符，如果包含则只处理换行符之前的内容
+                if (code.contains("\n") || code.contains("\r")) {
+                    // 获取换行符之前的内容
+                    String cleanCode = getContentBeforeNewline(code);
+                    if (!cleanCode.isEmpty() && cleanCode.length() >= 10 && cleanCode.length() <= 15) {
+                        // 设置清理后的文本（不含换行符）
+                        etProductCode.setText(cleanCode);
+                        etProductCode.setSelection(cleanCode.length());
+
+                        // 延迟处理，避免快速输入时的多次触发
+                        etProductCode.postDelayed(() -> {
+                            handleScannedCode(cleanCode);
+                        }, 100);
+                    }
+                    return;
+                }
+
                 // 处理回车符和换行符
                 code = removeEnterAndNewline(code);
                 if (!code.equals(s.toString())) {
@@ -152,6 +170,26 @@ public class DoReviewDetailActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    /**
+     * 获取换行符之前的内容
+     */
+    private String getContentBeforeNewline(String text) {
+        if (text == null) return "";
+
+        // 找到第一个换行符的位置
+        int newlineIndex = text.indexOf('\n');
+        if (newlineIndex == -1) {
+            newlineIndex = text.indexOf('\r');
+        }
+
+        // 如果有换行符，只返回换行符之前的内容
+        if (newlineIndex != -1) {
+            return text.substring(0, newlineIndex).trim();
+        }
+
+        return text.trim();
     }
 
     /**
@@ -301,6 +339,7 @@ public class DoReviewDetailActivity extends AppCompatActivity {
         });
     }
 
+    // 其他方法保持不变...
     private void buildProductMapFromCurrentBill() {
         productMap.clear();
         System.out.println("=== 从当前单据构建商品映射 ===");

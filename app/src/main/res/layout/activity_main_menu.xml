@@ -23,7 +23,7 @@
         android:layout_height="60dp"
         android:layout_marginBottom="20dp"
         android:backgroundTint="#2196F3"
-        android:text="收理货部"
+        android:text="数据操作"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
         android:textAllCaps="false" />
