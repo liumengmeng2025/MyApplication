@@ -87,7 +87,7 @@
             android:layout_weight="1"
             android:layout_marginRight="5dp"
             android:backgroundTint="#4CAF50"
-            android:text="按商品查"
+            android:text="按箱唛查"
             android:textSize="12sp" />
 
         <Button

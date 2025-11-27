@@ -34,7 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="0dp"
-        android:hint="请扫描商品货号"
+        android:hint="请扫描箱唛"
         android:imeOptions="actionDone"
         android:inputType="text" />
 

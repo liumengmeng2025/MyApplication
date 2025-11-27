@@ -43,8 +43,21 @@
         android:id="@+id/btnPlateCount"
         android:layout_width="200dp"
         android:layout_height="60dp"
+        android:layout_marginBottom="20dp"
         android:backgroundTint="#FF9800"
         android:text="板标件数查询"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textAllCaps="false" />
+
+    <!-- 新增的装柜查询按钮 -->
+    <Button
+        android:id="@+id/btnLoadingQuery"
+        android:layout_width="200dp"
+        android:layout_height="60dp"
+        android:layout_marginBottom="20dp"
+        android:backgroundTint="#9C27B0"
+        android:text="已装柜查询"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:textAllCaps="false" />

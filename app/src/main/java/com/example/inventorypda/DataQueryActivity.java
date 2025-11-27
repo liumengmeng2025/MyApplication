@@ -1,6 +1,6 @@
 package com.example.inventorypda;
 
-import android.content.Intent; // 添加这行导入
+import android.content.Intent;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -20,6 +20,7 @@ public class DataQueryActivity extends AppCompatActivity {
         Button btnUnscannedXiangma = findViewById(R.id.btnUnscannedXiangma);
         Button btnPendingData = findViewById(R.id.btnPendingData);
         Button btnPlateCount = findViewById(R.id.btnPlateCount);
+        Button btnLoadingQuery = findViewById(R.id.btnLoadingQuery); // 装柜查询按钮
         Button btnBack = findViewById(R.id.btnBack);
 
         btnUnscannedXiangma.setOnClickListener(new View.OnClickListener() {
@@ -40,6 +41,16 @@ public class DataQueryActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 showBranchSelectionDialog("板标件数查询", "plate_count");
+            }
+        });
+
+        // 修改这里：跳转到 CabinetWithdrawActivity
+        btnLoadingQuery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 直接跳转到装柜查询界面，不需要选择分支机构
+                Intent intent = new Intent(DataQueryActivity.this, CabinetWithdrawActivity.class);
+                startActivity(intent);
             }
         });
 
