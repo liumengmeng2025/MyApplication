@@ -70,7 +70,6 @@ public class AreaBatchBindActivity extends AppCompatActivity {
             }
         });
 
-        // 已删除 btnBack 的点击事件监听器
     }
 
     private void queryItems() {

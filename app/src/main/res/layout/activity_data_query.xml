@@ -11,50 +11,48 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="30dp"
-        android:text="管理系统"
+        android:text="数据查询"
         android:gravity="center"
         android:textColor="#333333"
         android:textSize="24sp"
         android:textStyle="bold" />
 
     <Button
-        android:id="@+id/btnReceivingDept"
+        android:id="@+id/btnUnscannedXiangma"
         android:layout_width="200dp"
         android:layout_height="60dp"
         android:layout_marginBottom="20dp"
         android:backgroundTint="#2196F3"
-        android:text="数据操作"
+        android:text="未扫描箱唛查询"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textAllCaps="false" />
 
     <Button
-        android:id="@+id/btnDistributionDept"
+        android:id="@+id/btnPendingData"
         android:layout_width="200dp"
         android:layout_height="60dp"
+        android:layout_marginBottom="20dp"
         android:backgroundTint="#4CAF50"
-        android:text="配发部"
+        android:text="待装数据查询"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textAllCaps="false" />
 
-    <!-- 新增数据查询按钮 -->
     <Button
-        android:id="@+id/btnDataQuery"
+        android:id="@+id/btnPlateCount"
         android:layout_width="200dp"
         android:layout_height="60dp"
-        android:layout_marginTop="20dp"
         android:backgroundTint="#FF9800"
-        android:text="数据查询"
+        android:text="板标件数查询"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textAllCaps="false" />
 
     <Button
-        android:id="@+id/btnCheckUpdate"
+        android:id="@+id/btnBack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="检查更新"
-        android:backgroundTint="#FF0000"
-        android:layout_marginTop="16dp" />
+        android:text="返回"
+        android:layout_marginTop="30dp" />
 </LinearLayout>

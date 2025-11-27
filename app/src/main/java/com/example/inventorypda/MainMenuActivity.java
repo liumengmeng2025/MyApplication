@@ -18,12 +18,21 @@ public class MainMenuActivity extends AppCompatActivity {
 
         Button btnReceivingDept = findViewById(R.id.btnReceivingDept);
         Button btnDistributionDept = findViewById(R.id.btnDistributionDept);
+        Button btnDataQuery = findViewById(R.id.btnDataQuery); // 新增
         Button btnCheckUpdate = findViewById(R.id.btnCheckUpdate);
 
         btnReceivingDept.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(MainMenuActivity.this, ReceivingDepartmentActivity.class));
+            }
+        });
+
+        // 新增数据查询按钮点击事件
+        btnDataQuery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainMenuActivity.this, DataQueryActivity.class));
             }
         });
 

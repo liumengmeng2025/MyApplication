@@ -220,8 +220,22 @@ public class AreaQueryActivity extends AppCompatActivity {
     }
 
     // 调用批量更新API
+    // 在batchUpdateBillNumberApi方法中添加调试
     private void batchUpdateBillNumberApi(JSONArray updateData, final String billNumber) {
         String apiUrl = API_BASE_URL + "/receiving/batch_update_bill_number";
+
+        // 打印调试信息
+        Log.d("BATCH_UPDATE", "开始批量更新，提单号: " + billNumber);
+        Log.d("BATCH_UPDATE", "更新数据条数: " + updateData.length());
+        try {
+            for (int i = 0; i < updateData.length(); i++) {
+                JSONObject item = updateData.getJSONObject(i);
+                Log.d("BATCH_UPDATE", "第" + (i+1) + "条: area=" + item.getString("area") +
+                        ", plate=" + item.getString("plate"));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         JSONObject requestBody = new JSONObject();
         try {
@@ -240,12 +254,33 @@ public class AreaQueryActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
+                            Log.d("BATCH_UPDATE", "响应: " + response.toString());
                             boolean success = response.getBoolean("success");
                             String message = response.getString("message");
+
                             if (success) {
                                 // 播放成功提示音
                                 playSound();
-                                Toast.makeText(AreaQueryActivity.this, message, Toast.LENGTH_SHORT).show();
+
+                                // 显示详细结果
+                                if (response.has("data")) {
+                                    JSONObject data = response.getJSONObject("data");
+                                    int updatedCount = data.getInt("updated_count");
+                                    int failedCount = data.getInt("failed_count");
+
+                                    String detailMsg = "成功更新: " + updatedCount + "条";
+                                    if (failedCount > 0) {
+                                        detailMsg += "，失败: " + failedCount + "条";
+                                        // 显示失败详情
+                                        JSONArray failedDetails = data.getJSONArray("failed_details");
+                                        for (int i = 0; i < failedDetails.length(); i++) {
+                                            Log.w("BATCH_UPDATE", "失败详情: " + failedDetails.getString(i));
+                                        }
+                                    }
+                                    Toast.makeText(AreaQueryActivity.this, detailMsg, Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(AreaQueryActivity.this, message, Toast.LENGTH_SHORT).show();
+                                }
 
                                 // 重新查询数据以刷新显示
                                 if (currentQueryType.equals("area")) {
@@ -266,6 +301,7 @@ public class AreaQueryActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         error.printStackTrace();
+                        Log.e("BATCH_UPDATE", "网络请求失败: " + error.getMessage());
                         Toast.makeText(AreaQueryActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -273,7 +309,24 @@ public class AreaQueryActivity extends AppCompatActivity {
 
         requestQueue.add(jsonRequest);
     }
+    // 在批量更新成功后添加验证
+    private void verifyUpdateResults(JSONArray originalData, String billNumber) {
+        try {
+            JSONArray plates = new JSONArray();
+            for (int i = 0; i < originalData.length(); i++) {
+                JSONObject item = originalData.getJSONObject(i);
+                plates.put(item.getString("plate"));
+            }
 
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("plates", plates);
+            requestBody.put("bill_number", billNumber);
+
+            // 调用验证接口...
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
     // 调用后端API查询区域记录
     private void queryAreaRecords(String area) {
         String apiUrl = API_BASE_URL + "/receiving/area_summary?area=" + area;

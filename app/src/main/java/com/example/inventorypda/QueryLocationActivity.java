@@ -223,7 +223,7 @@ public class QueryLocationActivity extends AppCompatActivity {
                 });
     }
 
-    // 执行批量删除 - 新版本（无提单号检查）
+    // 执行批量删除 - 新版本（解除绑定）
     private void performBatchDelete() {
         if (itemList.isEmpty()) {
             Toast.makeText(this, "没有记录可删除", Toast.LENGTH_SHORT).show();
@@ -245,7 +245,7 @@ public class QueryLocationActivity extends AppCompatActivity {
     private void showBatchDeleteConfirmDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("确认批量解绑")
-                .setMessage("确定要解绑选中的 " + itemList.size() + " 条记录吗？")
+                .setMessage("确定要解除绑定选中的 " + itemList.size() + " 条记录吗？")
                 .setPositiveButton("确定", (dialogInterface, which) -> {
                     executeBatchDelete();
                     dialogInterface.dismiss();
@@ -258,7 +258,7 @@ public class QueryLocationActivity extends AppCompatActivity {
                 .show();
     }
 
-    // 执行批量删除
+    // 执行批量删除（解除绑定）
     private void executeBatchDelete() {
         final int total = itemList.size();
         final int[] successCount = {0};
@@ -270,6 +270,7 @@ public class QueryLocationActivity extends AppCompatActivity {
         for (final LocationItem item : itemList) {
             Map<String, String> params = new HashMap<>();
             params.put("id", String.valueOf(item.id));
+            params.put("operation_type", "解除绑定");  // 添加操作类型参数
 
             Log.d("BatchDelete", "发送删除请求: ID=" + item.id + ", 商品=" + item.商品货号 + ", 板标=" + item.板标);
 
@@ -316,9 +317,9 @@ public class QueryLocationActivity extends AppCompatActivity {
             // 显示结果提示
             String message;
             if (failCount == 0) {
-                message = "成功删除 " + successCount + " 条记录";
+                message = "成功解除绑定 " + successCount + " 条记录";
             } else {
-                message = "成功删除 " + successCount + " 条记录，" + failCount + " 条记录删除失败";
+                message = "成功解除绑定 " + successCount + " 条记录，" + failCount + " 条记录解除失败";
             }
 
             Toast.makeText(QueryLocationActivity.this, message, Toast.LENGTH_LONG).show();
@@ -334,9 +335,9 @@ public class QueryLocationActivity extends AppCompatActivity {
     // 长按删除确认对话框
     private void showDeleteConfirmDialog(LocationItem item) {
         new AlertDialog.Builder(this)
-                .setTitle("确认删除")
+                .setTitle("确认解除绑定")
                 .setMessage(String.format(
-                        "是否删除以下记录？\n商品货号：%s\n板标：%s\n区域：%s",
+                        "是否解除绑定以下记录？\n商品货号：%s\n板标：%s\n区域：%s",
                         item.商品货号, item.板标, item.区域
                 ))
                 .setPositiveButton("是", (dialog, which) -> {
@@ -350,10 +351,11 @@ public class QueryLocationActivity extends AppCompatActivity {
                 .show();
     }
 
-    // 单条删除
+    // 单条删除（解除绑定）
     private void deleteSingleItem(LocationItem item) {
         Map<String, String> params = new HashMap<>();
         params.put("id", String.valueOf(item.id));
+        params.put("operation_type", "解除绑定");  // 添加操作类型参数
 
         Log.d("SingleDelete", "发送单条删除请求: ID=" + item.id);
 
@@ -367,9 +369,9 @@ public class QueryLocationActivity extends AppCompatActivity {
                             playSound(unbindSuccessSound);
 
                             if (itemList.isEmpty()) {
-                                Toast.makeText(QueryLocationActivity.this, "记录已删除，列表为空", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(QueryLocationActivity.this, "记录已解除绑定，列表为空", Toast.LENGTH_SHORT).show();
                             } else {
-                                Toast.makeText(QueryLocationActivity.this, "记录已删除", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(QueryLocationActivity.this, "记录已解除绑定", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -377,7 +379,7 @@ public class QueryLocationActivity extends AppCompatActivity {
                     @Override
                     public void onError(String error) {
                         runOnUiThread(() -> {
-                            Toast.makeText(QueryLocationActivity.this, "删除失败: " + error, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(QueryLocationActivity.this, "解除绑定失败: " + error, Toast.LENGTH_SHORT).show();
                         });
                     }
                 });

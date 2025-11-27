@@ -33,7 +33,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
 
     // UI组件声明
     private EditText etSearch, etBillNumber;
-    private Button btnByProduct, btnByPlate, btnUnbind, btnCabinetQuery, btnCabinetScan, btnFixBillNumber;
+    private Button btnByProduct, btnByPlate, btnUnbind, btnCabinetQuery, btnCabinetScan, btnFixBillNumber, btnFinishCabinet;
     private ListView lvItems;
     private TextView tvCurrentBillNumber;
 
@@ -45,6 +45,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
     private MediaPlayer unbindSuccessSound;
     private MediaPlayer fixBillSuccessSound;
     private MediaPlayer billNotExistSound;
+    private MediaPlayer finishCabinetSound;
 
     // 当前查询类型和值
     private String currentSearchType = "";
@@ -73,8 +74,9 @@ public class CabinetOperationActivity extends AppCompatActivity {
     private void initSounds() {
         try {
             unbindSuccessSound = MediaPlayer.create(this, R.raw.unbind_success_sound);
-            fixBillSuccessSound = MediaPlayer.create(this, R.raw.success_sound2); // 固定成功声音
-            billNotExistSound = MediaPlayer.create(this, R.raw.not_exist_sound); // 提单号不存在声音
+            fixBillSuccessSound = MediaPlayer.create(this, R.raw.success_sound2);
+            billNotExistSound = MediaPlayer.create(this, R.raw.not_exist_sound);
+            finishCabinetSound = MediaPlayer.create(this, R.raw.cabinet_finish_sound);
         } catch (Exception e) {
             Log.e("SoundError", "无法加载声音文件", e);
         }
@@ -105,6 +107,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
         btnCabinetQuery = findViewById(R.id.btnCabinetQuery);
         btnCabinetScan = findViewById(R.id.btnCabinetScan);
         btnFixBillNumber = findViewById(R.id.btnFixBillNumber);
+        btnFinishCabinet = findViewById(R.id.btnFinishCabinet);
         lvItems = findViewById(R.id.lvItems);
         tvCurrentBillNumber = findViewById(R.id.tvCurrentBillNumber);
     }
@@ -127,12 +130,16 @@ public class CabinetOperationActivity extends AppCompatActivity {
             // 未固定时，按钮可点击
             btnFixBillNumber.setEnabled(true);
             btnFixBillNumber.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_light));
+            btnFinishCabinet.setEnabled(false);
+            btnFinishCabinet.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
         } else {
             tvCurrentBillNumber.setText("当前提单号：" + fixedBillNumber);
             tvCurrentBillNumber.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
             // 已固定时，按钮不可点击
             btnFixBillNumber.setEnabled(false);
             btnFixBillNumber.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            btnFinishCabinet.setEnabled(true);
+            btnFinishCabinet.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_dark));
             // 在输入框中显示当前提单号
             etBillNumber.setText(fixedBillNumber);
         }
@@ -146,7 +153,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
         btnByProduct.setOnClickListener(v -> searchByProduct());
         // 按板标查询
         btnByPlate.setOnClickListener(v -> searchByPlate());
-        // 批量解除绑定
+        // 批量解除绑定（装柜解除）
         btnUnbind.setOnClickListener(v -> performBatchDelete());
         // 装柜数据查询
         btnCabinetQuery.setOnClickListener(v -> {
@@ -158,6 +165,8 @@ public class CabinetOperationActivity extends AppCompatActivity {
             Intent intent = new Intent(CabinetOperationActivity.this, CabinetFlowActivity.class);
             startActivity(intent);
         });
+        // 装柜完成
+        btnFinishCabinet.setOnClickListener(v -> showFinishCabinetDialog());
     }
 
     // 列表事件绑定方法
@@ -195,9 +204,12 @@ public class CabinetOperationActivity extends AppCompatActivity {
         if (billNotExistSound != null) {
             billNotExistSound.release();
         }
+        if (finishCabinetSound != null) {
+            finishCabinetSound.release();
+        }
     }
 
-    // 固定提单号 - 修改后的版本
+    // 固定提单号
     private void fixBillNumber() {
         String billNumber = etBillNumber.getText().toString().trim();
         if (billNumber.isEmpty()) {
@@ -349,7 +361,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
                 });
     }
 
-    // 执行批量删除
+    // 执行批量删除（装柜解除）
     private void performBatchDelete() {
         if (itemList.isEmpty()) {
             Toast.makeText(this, "没有记录可删除", Toast.LENGTH_SHORT).show();
@@ -371,7 +383,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
     private void showBatchDeleteConfirmDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("确认批量解绑")
-                .setMessage("确定要解绑选中的 " + itemList.size() + " 条记录吗？")
+                .setMessage("确定要装柜解除选中的 " + itemList.size() + " 条记录吗？")
                 .setPositiveButton("确定", (dialogInterface, which) -> {
                     executeBatchDelete();
                     dialogInterface.dismiss();
@@ -384,7 +396,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
                 .show();
     }
 
-    // 执行批量删除
+    // 执行批量删除（装柜解除）
     private void executeBatchDelete() {
         final int total = itemList.size();
         final int[] successCount = {0};
@@ -396,6 +408,7 @@ public class CabinetOperationActivity extends AppCompatActivity {
         for (final CabinetItem item : itemList) {
             Map<String, String> params = new HashMap<>();
             params.put("id", String.valueOf(item.id));
+            params.put("operation_type", "装柜解除");  // 添加操作类型参数
 
             Log.d("CabinetBatchDelete", "发送删除请求: ID=" + item.id + ", 商品=" + item.商品货号 + ", 板标=" + item.板标);
 
@@ -434,6 +447,11 @@ public class CabinetOperationActivity extends AppCompatActivity {
             }
             adapter.notifyDataSetChanged();
 
+            // 清空搜索输入框，方便下次扫描
+            etSearch.setText("");
+            // 将焦点设置到搜索输入框，方便直接扫描
+            etSearch.requestFocus();
+
             // 播放解绑成功音效 - 只要成功解绑至少一条就播放
             if (successCount > 0) {
                 playSound(unbindSuccessSound);
@@ -442,9 +460,9 @@ public class CabinetOperationActivity extends AppCompatActivity {
             // 显示结果提示
             String message;
             if (failCount == 0) {
-                message = "成功解绑 " + successCount + " 条记录";
+                message = "成功装柜解除 " + successCount + " 条记录";
             } else {
-                message = "成功解绑 " + successCount + " 条记录，" + failCount + " 条记录解绑失败";
+                message = "成功装柜解除 " + successCount + " 条记录，" + failCount + " 条记录解除失败";
             }
 
             Toast.makeText(CabinetOperationActivity.this, message, Toast.LENGTH_LONG).show();
@@ -460,9 +478,9 @@ public class CabinetOperationActivity extends AppCompatActivity {
     // 长按删除确认对话框
     private void showDeleteConfirmDialog(CabinetItem item) {
         new AlertDialog.Builder(this)
-                .setTitle("确认解绑")
+                .setTitle("确认装柜解除")
                 .setMessage(String.format(
-                        "是否解绑以下记录？\n商品货号：%s\n板标：%s\n区域：%s",
+                        "是否装柜解除以下记录？\n商品货号：%s\n板标：%s\n区域：%s",
                         item.商品货号, item.板标, item.区域
                 ))
                 .setPositiveButton("是", (dialog, which) -> {
@@ -476,10 +494,11 @@ public class CabinetOperationActivity extends AppCompatActivity {
                 .show();
     }
 
-    // 单条删除
+    // 单条删除（装柜解除）
     private void deleteSingleItem(CabinetItem item) {
         Map<String, String> params = new HashMap<>();
         params.put("id", String.valueOf(item.id));
+        params.put("operation_type", "装柜解除");  // 添加操作类型参数
 
         Log.d("CabinetSingleDelete", "发送单条删除请求: ID=" + item.id);
 
@@ -491,13 +510,18 @@ public class CabinetOperationActivity extends AppCompatActivity {
                             itemList.remove(item);
                             adapter.notifyDataSetChanged();
 
+                            // 清空搜索输入框，方便下次扫描
+                            etSearch.setText("");
+                            // 将焦点设置到搜索输入框，方便直接扫描
+                            etSearch.requestFocus();
+
                             // 播放解绑成功音效
                             playSound(unbindSuccessSound);
 
                             if (itemList.isEmpty()) {
-                                Toast.makeText(CabinetOperationActivity.this, "记录已解绑，列表为空", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(CabinetOperationActivity.this, "记录已装柜解除，列表为空", Toast.LENGTH_SHORT).show();
                             } else {
-                                Toast.makeText(CabinetOperationActivity.this, "记录已解绑", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(CabinetOperationActivity.this, "记录已装柜解除", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -505,7 +529,72 @@ public class CabinetOperationActivity extends AppCompatActivity {
                     @Override
                     public void onError(String error) {
                         runOnUiThread(() -> {
-                            Toast.makeText(CabinetOperationActivity.this, "解绑失败: " + error, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(CabinetOperationActivity.this, "装柜解除失败: " + error, Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
+    }
+
+    // 显示装柜完成对话框
+    private void showFinishCabinetDialog() {
+        if (fixedBillNumber.isEmpty()) {
+            Toast.makeText(this, "请先固定提单号", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("装柜完成");
+        builder.setMessage("请输入柜号：");
+
+        final EditText input = new EditText(this);
+        input.setHint("请输入柜号");
+        builder.setView(input);
+
+        builder.setPositiveButton("确认", (dialog, which) -> {
+            String cabinetNumber = input.getText().toString().trim();
+            if (cabinetNumber.isEmpty()) {
+                Toast.makeText(CabinetOperationActivity.this, "请输入柜号", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            finishCabinet(cabinetNumber);
+        });
+
+        builder.setNegativeButton("取消", (dialog, which) -> {
+            dialog.cancel();
+        });
+
+        builder.show();
+    }
+
+    // 执行装柜完成操作
+    private void finishCabinet(String cabinetNumber) {
+        Map<String, String> params = new HashMap<>();
+        params.put("bill_number", fixedBillNumber);
+        params.put("cabinet_number", cabinetNumber);
+
+        Log.d("FinishCabinet", "发送装柜完成请求: 提单号=" + fixedBillNumber + ", 柜号=" + cabinetNumber);
+
+        ApiClient.getInstance(this).postRequest("/cabinet/finish", params,
+                new ApiClient.ApiResponseListener() {
+                    @Override
+                    public void onSuccess(JSONObject response) {
+                        runOnUiThread(() -> {
+                            playSound(finishCabinetSound);
+                            Toast.makeText(CabinetOperationActivity.this, "装柜完成，柜号" + cabinetNumber + "已记录", Toast.LENGTH_SHORT).show();
+
+                            // 清空当前提单号
+                            fixedBillNumber = "";
+                            updateBillNumberDisplay();
+                            etBillNumber.setText("");
+                            itemList.clear();
+                            adapter.notifyDataSetChanged();
+                        });
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(CabinetOperationActivity.this, "装柜完成失败: " + error, Toast.LENGTH_SHORT).show();
                         });
                     }
                 });

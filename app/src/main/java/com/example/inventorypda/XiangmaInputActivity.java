@@ -1,5 +1,4 @@
 package com.example.inventorypda;
-
 import android.app.AlertDialog;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -28,6 +27,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
     private MediaPlayer saveSuccessPlayer;  // 保存成功语音
     private MediaPlayer deleteSuccessPlayer; // 删除成功语音
     private MediaPlayer scanSuccessPlayer;   // 扫描成功语音
+    private MediaPlayer formatMismatchPlayer; // 新增：格式不符语音
 
     private Handler autoSaveHandler = new Handler();
     private Runnable autoSaveRunnable;
@@ -81,6 +81,11 @@ public class XiangmaInputActivity extends AppCompatActivity {
         btnSingleSave.setOnClickListener(v -> {
             String xiangma = etXiangma.getText().toString().trim();
             if (!TextUtils.isEmpty(xiangma)) {
+                // 新增：检查箱唛长度
+                if (xiangma.length() != 9) {
+                    showFormatMismatchDialog(xiangma, true);
+                    return;
+                }
                 showBranchSelectionDialog(xiangma, true);
             } else {
                 showStatus("请输入箱唛", false);
@@ -115,6 +120,12 @@ public class XiangmaInputActivity extends AppCompatActivity {
                     autoSaveRunnable = () -> {
                         String currentText = etXiangma.getText().toString().trim();
                         if (!TextUtils.isEmpty(currentText)) {
+                            // 新增：检查箱唛长度
+                            if (currentText.length() != 9) {
+                                showFormatMismatchDialog(currentText, false);
+                                return;
+                            }
+
                             // 播放扫描成功提示音
                             playSound(scanSuccessPlayer);
 
@@ -174,6 +185,14 @@ public class XiangmaInputActivity extends AppCompatActivity {
                 Log.w(TAG, "语音文件 scan_success_sound 未找到");
             }
 
+            // 新增：初始化格式不符语音
+            int formatMismatchResId = getResources().getIdentifier("format_mismatch_sound", "raw", getPackageName());
+            if (formatMismatchResId != 0) {
+                formatMismatchPlayer = MediaPlayer.create(this, formatMismatchResId);
+            } else {
+                Log.w(TAG, "语音文件 format_mismatch_sound 未找到");
+            }
+
         } catch (Exception e) {
             Log.e(TAG, "初始化语音播放器失败", e);
         }
@@ -194,6 +213,41 @@ public class XiangmaInputActivity extends AppCompatActivity {
                 Log.e(TAG, "播放语音失败", e);
             }
         }
+    }
+
+    /**
+     * 新增：显示格式不符提示对话框
+     */
+    private void showFormatMismatchDialog(String xiangma, boolean isManualSave) {
+        playSound(formatMismatchPlayer); // 播放格式不符语音
+
+        new AlertDialog.Builder(this)
+                .setTitle("箱唛格式不符")
+                .setMessage("箱唛 '" + xiangma + "' 长度不等于9位，格式不符合标准。\n当前长度：" + xiangma.length() + "位\n是否仍要保存？")
+                .setPositiveButton("保存", (dialog, which) -> {
+                    // 用户确认保存，继续处理
+                    if (isManualSave) {
+                        // 手动保存模式：弹出分公司选择
+                        showBranchSelectionDialog(xiangma, true);
+                    } else {
+                        // 自动模式：根据当前模式处理
+                        if (rbAutoSave.isChecked()) {
+                            showBranchSelectionDialog(xiangma, true);
+                        } else {
+                            addToTempList(xiangma, "", "待保存");
+                            etXiangma.setText("");
+                            etXiangma.requestFocus();
+                            showStatus("已添加到列表，共 " + tempList.size() + " 条待保存", true);
+                        }
+                    }
+                })
+                .setNegativeButton("取消", (dialog, which) -> {
+                    // 用户取消，清空输入框并重新聚焦
+                    etXiangma.setText("");
+                    etXiangma.requestFocus();
+                })
+                .setCancelable(false)
+                .show();
     }
 
     /**
@@ -309,12 +363,12 @@ public class XiangmaInputActivity extends AppCompatActivity {
 
     private void updateModeUI(boolean isAutoMode) {
         if (isAutoMode) {
-            tvStatus.setText("状态：自动保存模式 - 扫描后0.4秒自动保存");
+            tvStatus.setText("状态：自动保存模式 - 扫描后自动保存");
             tvStatus.setBackgroundColor(0xFFE8F5E8);
             tvStatus.setTextColor(0xFF2E7D32);
             btnSingleSave.setText("立即保存");
         } else {
-            tvStatus.setText("状态：批量保存模式 - 扫描后0.4秒自动添加到列表");
+            tvStatus.setText("状态：批量保存模式 - 扫描后添加到列表");
             tvStatus.setBackgroundColor(0xFFFFF3E0);
             tvStatus.setTextColor(0xFFEF6C00);
             btnSingleSave.setText("添加列表");
@@ -544,6 +598,7 @@ public class XiangmaInputActivity extends AppCompatActivity {
         releaseMediaPlayer(saveSuccessPlayer);
         releaseMediaPlayer(deleteSuccessPlayer);
         releaseMediaPlayer(scanSuccessPlayer);
+        releaseMediaPlayer(formatMismatchPlayer); // 新增：释放格式不符语音资源
     }
 
     /**

@@ -23,7 +23,7 @@ public class ApiClient {
     private RequestQueue requestQueue;
     private static Context ctx;
     // 服务器IP和端口（根据实际情况修改）
-    private static final String BASE_URL = "http://121.12.156.222:5000";
+    private static final String BASE_URL = "http://192.168.17.121:5000";
 
     // 回调接口
     public interface ApiResponseListener {
@@ -521,7 +521,43 @@ public class ApiClient {
                 Uri.encode(xiangma) + "&branch=" + Uri.encode(branch);
         makeGetRequest(url, listener);
     }
+// ======================== 板标管理相关API ========================
+    /**
+     * 查询板标信息
+     */
+    public void queryPlate(String plate, ApiResponseListener listener) {
+        String url = BASE_URL + "/plate/query?plate=" + Uri.encode(plate);
+        makeGetRequest(url, listener);
+    }
 
+    /**
+     * 更新板标信息
+     */
+    public void updatePlate(String plate, String branch, String category, int quantity, ApiResponseListener listener) {
+        String url = BASE_URL + "/plate/update";
+
+        JSONObject params = new JSONObject();
+        try {
+            params.put("plate", plate);
+            params.put("branch", branch);
+            params.put("category", category);
+            params.put("quantity", quantity);
+        } catch (JSONException e) {
+            Log.e("ApiClient", "创建参数失败", e);
+            listener.onError("参数错误");
+            return;
+        }
+
+        makeJsonPostRequest(url, params, listener);
+    }
+
+    /**
+     * 获取板标类别列表
+     */
+    public void getPlateCategories(ApiResponseListener listener) {
+        String url = BASE_URL + "/plate/categories";
+        makeGetRequest(url, listener);
+    }
     /**
      * 保存箱唛（带分公司参数）
      */

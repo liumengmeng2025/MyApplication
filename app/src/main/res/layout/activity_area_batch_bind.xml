@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="0dp"
         android:gravity="center"
-        android:text="批量绑定柜号"
+        android:text="批量绑定区域"
         android:textColor="#333333"
         android:textSize="15sp"
         android:textStyle="bold" />
@@ -51,7 +51,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="1dp"
-        android:text="批量绑定柜号"
+        android:text="批量绑定区域"
         android:backgroundTint="#4CAF50"
         android:textColor="#FFFFFF"
         android:textSize="16sp"

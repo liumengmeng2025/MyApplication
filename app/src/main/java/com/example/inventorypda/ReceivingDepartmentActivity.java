@@ -18,8 +18,16 @@ public class ReceivingDepartmentActivity extends AppCompatActivity {
         Button btnBindArea = findViewById(R.id.btnBindArea);
         Button btnAreaQuery = findViewById(R.id.btnAreaQuery);
         Button btnBack = findViewById(R.id.btnBack);
-        Button btnBatchBind = findViewById(R.id.btnBatchBind);
+        // 移除批量绑定区域按钮的引用
+        Button btnBranchClear = findViewById(R.id.btnBranchClear);
+        Button btnPlateManage = findViewById(R.id.btnPlateManage);
 
+        btnPlateManage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(ReceivingDepartmentActivity.this, PlateManageActivity.class));
+            }
+        });
         btnReceiving.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -35,10 +43,12 @@ public class ReceivingDepartmentActivity extends AppCompatActivity {
             }
         });
 
-        btnBatchBind.setOnClickListener(new View.OnClickListener() {
+        // 移除批量绑定区域按钮的点击事件
+
+        btnBranchClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(ReceivingDepartmentActivity.this, AreaBatchBindActivity.class));
+                startActivity(new Intent(ReceivingDepartmentActivity.this, BranchClearActivity.class));
             }
         });
 

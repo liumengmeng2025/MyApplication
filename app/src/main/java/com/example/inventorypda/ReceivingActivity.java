@@ -48,6 +48,7 @@ public class ReceivingActivity extends AppCompatActivity {
     private MediaPlayer deleteSuccessSound;
     private MediaPlayer checkExistsSound;
     private MediaPlayer shanchuSuccessSound;
+    private MediaPlayer format_mismatch_sound; // 新增：格式不符提示音
 
     private Handler handler = new Handler();
     private Runnable scanRunnable;
@@ -70,10 +71,11 @@ public class ReceivingActivity extends AppCompatActivity {
             scanSuccessSound = MediaPlayer.create(this, R.raw.scan_success_sound);
             saveSuccessSound = MediaPlayer.create(this, R.raw.save_success_sound);
             duplicateSound = MediaPlayer.create(this, R.raw.duplicate_beep);
-            dialogSound = MediaPlayer.create(this, R.raw.dialog_sound);
+            dialogSound = MediaPlayer.create(this, R.raw.not_exist_sound);
             deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
             checkExistsSound = MediaPlayer.create(this, R.raw.dialog_sound);
             shanchuSuccessSound = MediaPlayer.create(this, R.raw.shanchu_success);
+            format_mismatch_sound = MediaPlayer.create(this, R.raw.format_mismatch_sound); // 新增：格式不符声音
         } catch (Exception e) {
             Log.e("SoundError", "无法加载声音文件", e);
         }
@@ -211,6 +213,7 @@ public class ReceivingActivity extends AppCompatActivity {
         releaseMediaPlayer(deleteSuccessSound);
         releaseMediaPlayer(checkExistsSound);
         releaseMediaPlayer(shanchuSuccessSound);
+        releaseMediaPlayer(format_mismatch_sound); // 新增：释放格式不符声音资源
     }
 
     private void releaseMediaPlayer(MediaPlayer mp) {
@@ -270,22 +273,54 @@ public class ReceivingActivity extends AppCompatActivity {
             return;
         }
 
+        // 新增：检查条码格式，不等于9位时提示格式不符
+        if (barcode.length() != 9) {
+            playSound(format_mismatch_sound);
+            showFormatMismatchDialog(barcode);
+            return;
+        }
+
+        // 正常处理条码扫描
+        processBarcodeScan(barcode);
+    }
+
+    // 新增：显示格式不符提示对话框
+    private void showFormatMismatchDialog(String barcode) {
+        new AlertDialog.Builder(this)
+                .setTitle("条码格式不符")
+                .setMessage("条码 '" + barcode + "' 箱唛不是9位。\n是否仍要保存到临时表？")
+                .setPositiveButton("保存", (dialog, which) -> {
+                    processBarcodeScan(barcode);
+                })
+                .setNegativeButton("取消", (dialog, which) -> {
+                    etBarcode.setText("");
+                    etBarcode.requestFocus();
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void processBarcodeScan(String barcode) {
         apiClient.addToTemp(currentPlate, barcode, new ApiClient.ApiResponseListener() {
             @Override
             public void onSuccess(JSONObject response) {
                 try {
                     String message = response.getString("message");
-                    Toast.makeText(ReceivingActivity.this, message, Toast.LENGTH_SHORT).show();
 
                     boolean existsInTemp = response.optBoolean("exists_in_temp", false);
                     boolean existsInMain = response.optBoolean("exists_in_main", true);
 
                     if (existsInTemp) {
+                        // 临时表中已存在，播放重复提示音
                         playSound(duplicateSound);
                     } else if (!existsInMain) {
+                        // 收货表中不存在，播放相应提示音
                         playSound(deleteSuccessSound);
+                        // 可以保留不存在提示，或者也移除
+                        Toast.makeText(ReceivingActivity.this, "商品在收货表中不存在", Toast.LENGTH_SHORT).show();
                     } else {
                         playSound(scanSuccessSound);
+
                     }
 
                     etBarcode.selectAll();
@@ -300,10 +335,16 @@ public class ReceivingActivity extends AppCompatActivity {
             public void onError(String error) {
                 if (error.contains("已存在") || error.contains("重复")) {
                     playSound(duplicateSound);
+                    // 错误情况下仍然显示提示
+                    handleError("添加商品失败: " + error);
                 } else if (error.contains("不存在")) {
                     playSound(deleteSuccessSound);
+                    // 错误情况下仍然显示提示
+                    handleError("添加商品失败: " + error);
+                } else {
+                    // 其他错误仍然显示
+                    handleError("添加商品失败: " + error);
                 }
-                handleError("添加商品失败: " + error);
             }
 
             private void handleError(String message) {
@@ -315,7 +356,16 @@ public class ReceivingActivity extends AppCompatActivity {
     }
 
     private void loadTempItems() {
-        if (currentPlate.isEmpty()) return;
+        if (currentPlate.isEmpty()) {
+            Log.d("LoadTemp", "当前板标为空，不加载数据");
+            // 即使板标为空，也清空列表以确保界面干净
+            itemList.clear();
+            adapter.notifyDataSetChanged();
+            updateScanCount();
+            return;
+        }
+
+        Log.d("LoadTemp", "开始加载板标: " + currentPlate + " 的临时数据");
 
         apiClient.getTempItems(currentPlate, new ApiClient.ApiResponseListener() {
             @Override
@@ -325,6 +375,8 @@ public class ReceivingActivity extends AppCompatActivity {
                         if (response.getBoolean("success")) {
                             JSONArray data = response.getJSONArray("data");
                             itemList.clear();
+
+                            Log.d("LoadTemp", "服务器返回数据条数: " + data.length());
 
                             for (int i = 0; i < data.length(); i++) {
                                 JSONObject item = data.getJSONObject(i);
@@ -339,20 +391,26 @@ public class ReceivingActivity extends AppCompatActivity {
 
                             adapter.notifyDataSetChanged();
                             updateScanCount();
+
+                            Log.d("LoadTemp", "加载完成，当前条数: " + itemList.size());
                         } else {
                             String error = response.getString("message");
                             Toast.makeText(ReceivingActivity.this, "加载失败: " + error, Toast.LENGTH_SHORT).show();
+                            Log.e("LoadTemp", "加载失败: " + error);
                         }
                     } catch (JSONException e) {
                         Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
-                        Log.e("LoadError", "解析失败", e);
+                        Log.e("LoadTemp", "解析失败", e);
                     }
                 });
             }
 
             @Override
             public void onError(String error) {
-                runOnUiThread(() -> Toast.makeText(ReceivingActivity.this, "加载商品失败: " + error, Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> {
+                    Toast.makeText(ReceivingActivity.this, "加载商品失败: " + error, Toast.LENGTH_SHORT).show();
+                    Log.e("LoadTemp", "加载失败: " + error);
+                });
             }
         });
     }
@@ -374,45 +432,7 @@ public class ReceivingActivity extends AppCompatActivity {
             return;
         }
 
-        apiClient.checkDuplicates(currentPlate, new ApiClient.ApiResponseListener() {
-            @Override
-            public void onSuccess(JSONObject response) {
-                runOnUiThread(() -> {
-                    try {
-                        if (response.getBoolean("success")) {
-                            boolean hasDuplicates = response.getJSONObject("data").getBoolean("has_duplicates");
-
-                            if (hasDuplicates) {
-                                playSound(dialogSound);
-                                showDuplicateConfirmDialog();
-                            } else {
-                                showBranchSelectionDialog();
-                            }
-                        } else {
-                            String error = response.getString("message");
-                            Toast.makeText(ReceivingActivity.this, "检查重复失败: " + error, Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                Toast.makeText(ReceivingActivity.this, "检查重复失败: " + error, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void showDuplicateConfirmDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("发现重复商品")
-                .setMessage("收货表中已存在相同商品，是否继续保存？")
-                .setPositiveButton("是", (dialog, which) -> showBranchSelectionDialog())
-                .setNegativeButton("否", (dialog, which) -> dialog.dismiss())
-                .setCancelable(false)
-                .show();
+        showBranchSelectionDialog();
     }
 
     private void performSaveWithBranch() {
@@ -470,21 +490,55 @@ public class ReceivingActivity extends AppCompatActivity {
                     try {
                         if (response.getBoolean("success")) {
                             playSound(saveSuccessSound);
+
+                            // 从响应中获取保存的记录数量
+                            int savedCount = 0;
+                            try {
+                                if (response.has("updated_count")) {
+                                    savedCount = response.getInt("updated_count");
+                                } else if (response.has("data")) {
+                                    JSONObject data = response.getJSONObject("data");
+                                    if (data.has("updated_count")) {
+                                        savedCount = data.getInt("updated_count");
+                                    }
+                                }
+                            } catch (JSONException e) {
+                                Log.e("SaveCount", "无法获取保存数量", e);
+                            }
+
+                            // 如果从响应中获取不到数量，使用当前列表数量
+                            if (savedCount == 0) {
+                                savedCount = itemList.size();
+                            }
+
+                            // 显示详细的保存成功信息
+                            String successMessage = String.format("成功： %s 保存 %d 条记录", selectedBranch, savedCount);
+
+                            Toast.makeText(ReceivingActivity.this, successMessage, Toast.LENGTH_LONG).show();
+
+                            // 确保界面正确刷新
                             clearInterface();
-                            Toast.makeText(ReceivingActivity.this, "保存成功（分公司：" + selectedBranch + "）", Toast.LENGTH_SHORT).show();
+
+                            // 额外调用一次加载临时表，确保数据清空
+                            loadTempItems();
+
                         } else {
                             String error = response.getString("message");
                             Toast.makeText(ReceivingActivity.this, "保存失败: " + error, Toast.LENGTH_SHORT).show();
                         }
                     } catch (JSONException e) {
                         Toast.makeText(ReceivingActivity.this, "数据解析错误", Toast.LENGTH_SHORT).show();
+                        Log.e("SaveError", "保存响应解析错误", e);
                     }
                 });
             }
 
             @Override
             public void onError(String error) {
-                Toast.makeText(ReceivingActivity.this, "保存失败: " + error, Toast.LENGTH_SHORT).show();
+                runOnUiThread(() -> {
+                    Toast.makeText(ReceivingActivity.this, "保存失败: " + error, Toast.LENGTH_SHORT).show();
+                    Log.e("SaveError", "保存失败: " + error);
+                });
             }
         });
     }
@@ -533,16 +587,23 @@ public class ReceivingActivity extends AppCompatActivity {
     }
 
     private void clearInterface() {
-        etPlate.setText("");
-        etBarcode.setText("");
-        etPlate.setEnabled(true);
-        btnScanPlate.setEnabled(true);
-        itemList.clear();
-        adapter.notifyDataSetChanged();
-        currentPlate = "";
-        selectedBranch = "";
-        updateScanCount();
-        etPlate.requestFocus();
+        runOnUiThread(() -> {
+            etPlate.setText("");
+            etBarcode.setText("");
+            etPlate.setEnabled(true);
+            btnScanPlate.setEnabled(true);
+
+            // 清空列表数据
+            itemList.clear();
+            adapter.notifyDataSetChanged();
+
+            currentPlate = "";
+            selectedBranch = "";
+            updateScanCount();
+            etPlate.requestFocus();
+
+            Log.d("ClearInterface", "界面已清空，当前记录数: " + itemList.size());
+        });
     }
 
     public static class ReceivingItem {
@@ -563,7 +624,9 @@ public class ReceivingActivity extends AppCompatActivity {
         private android.content.Context context;
         private List<ReceivingItem> items;
 
-        private final SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        // 添加多种日期格式支持
+        private final SimpleDateFormat inputDateFormat1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        private final SimpleDateFormat inputDateFormat2 = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
         private final SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
 
         public ReceivingAdapter(android.content.Context context, List<ReceivingItem> items) {
@@ -618,14 +681,28 @@ public class ReceivingActivity extends AppCompatActivity {
             }
 
             try {
-                Date date = inputDateFormat.parse(originalDate);
+                Date date = null;
+
+                // 尝试第一种格式
+                try {
+                    date = inputDateFormat1.parse(originalDate);
+                } catch (ParseException e1) {
+                    // 第一种格式失败，尝试第二种格式
+                    try {
+                        date = inputDateFormat2.parse(originalDate);
+                    } catch (ParseException e2) {
+                        Log.e("DateError", "两种格式都无法解析: " + originalDate);
+                        return originalDate; // 返回原始字符串
+                    }
+                }
+
                 if (date == null) {
                     return originalDate;
                 }
                 return outputDateFormat.format(date);
-            } catch (ParseException e) {
+            } catch (Exception e) {
                 Log.e("DateError", "解析失败: " + originalDate, e);
-                return originalDate;
+                return originalDate; // 解析失败时返回原始字符串
             }
         }
     }

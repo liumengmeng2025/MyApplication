@@ -1,5 +1,6 @@
 package com.example.inventorypda;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -36,6 +37,7 @@ public class BindAreaActivity extends AppCompatActivity {
     private Button btnBindArea;
     private Button btnUnbind;
     private Button btnChangePlate;
+    private Button btnBatchBind; // 新增批量绑定按钮
     private ListView lvItems;
 
     // 数据相关
@@ -88,6 +90,7 @@ public class BindAreaActivity extends AppCompatActivity {
         btnBindArea = findViewById(R.id.btnBindArea);
         btnUnbind = findViewById(R.id.btnUnbind);
         btnChangePlate = findViewById(R.id.btnChangePlate);
+        btnBatchBind = findViewById(R.id.btnBatchBind); // 初始化批量绑定按钮
         lvItems = findViewById(R.id.lvItems);
     }
 
@@ -103,6 +106,7 @@ public class BindAreaActivity extends AppCompatActivity {
         btnBindArea.setOnClickListener(v -> showAreaInputDialog());
         btnUnbind.setOnClickListener(v -> showClearRecordsConfirm());
         btnChangePlate.setOnClickListener(v -> showChangePlateDialog());
+        btnBatchBind.setOnClickListener(v -> startBatchBindActivity()); // 设置批量绑定点击事件
 
         lvItems.setOnItemLongClickListener((parent, view, position, id) -> {
             BindAreaItem item = itemList.get(position);
@@ -113,6 +117,12 @@ public class BindAreaActivity extends AppCompatActivity {
             showSingleDeleteConfirm(item);
             return true;
         });
+    }
+
+    // 新增方法：启动批量绑定区域Activity
+    private void startBatchBindActivity() {
+        Intent intent = new Intent(BindAreaActivity.this, AreaBatchBindActivity.class);
+        startActivity(intent);
     }
 
     @Override

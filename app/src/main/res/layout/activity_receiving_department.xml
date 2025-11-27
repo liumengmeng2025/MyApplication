@@ -16,11 +16,32 @@
         android:textColor="#333333"
         android:textSize="24sp"
         android:textStyle="bold" />
-
+    <!-- 在现有按钮后面添加 -->
+    <Button
+        android:id="@+id/btnPlateManage"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:backgroundTint="#795548"
+        android:text="板标管理"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
+    <!-- 在现有按钮后面添加 -->
+    <Button
+        android:id="@+id/btnBranchClear"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:backgroundTint="#FF5722"
+        android:text="分公司数据清空"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
     <Button
         android:id="@+id/btnReceiving"
         android:layout_width="200dp"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:layout_marginTop="0dp"
         android:layout_marginBottom="0dp"
         android:backgroundTint="#9C27B0"
@@ -32,7 +53,7 @@
     <Button
         android:id="@+id/btnXiangmaInput"
         android:layout_width="200dp"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:layout_marginTop="0dp"
         android:layout_marginBottom="0dp"
         android:backgroundTint="#FF9800"
@@ -43,29 +64,20 @@
     <Button
         android:id="@+id/btnBindArea"
         android:layout_width="200dp"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:layout_marginTop="0dp"
         android:layout_marginBottom="0dp"
         android:backgroundTint="#607D8B"
-        android:text="绑定柜号"
+        android:text="绑定区域、更换板标"
         android:textColor="#FFFFFF"
         android:textSize="18sp" />
 
-    <Button
-        android:id="@+id/btnBatchBind"
-        android:layout_width="200dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="0dp"
-        android:layout_marginBottom="0dp"
-        android:backgroundTint="#2196F3"
-        android:text="批量绑定柜号"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp" />
+    <!-- 移除批量绑定区域按钮 -->
 
     <Button
         android:id="@+id/btnAreaQuery"
         android:layout_width="200dp"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:layout_marginTop="0dp"
         android:layout_marginBottom="0dp"
         android:backgroundTint="#4CAF50"
