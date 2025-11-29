@@ -29,7 +29,7 @@ public class QueryResultActivity extends AppCompatActivity {
     private static final String TAG = "QueryResultActivity";
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
-    private TextView tvLoading, tvQueryTitle, tvTotalCount; // 新增tvTotalCount
+    private TextView tvLoading, tvQueryTitle, tvTotalCount;
     private QueryResultAdapter adapter;
     private List<Map<String, String>> dataList = new ArrayList<>();
     private String queryType, branch;
@@ -43,16 +43,16 @@ public class QueryResultActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         tvLoading = findViewById(R.id.tvLoading);
         tvQueryTitle = findViewById(R.id.tvQueryTitle);
-        tvTotalCount = findViewById(R.id.tvTotalCount); // 初始化新的TextView
+        tvTotalCount = findViewById(R.id.tvTotalCount);
         Button btnBack = findViewById(R.id.btnBack);
 
-        // 获取查询参数
+
         queryType = getIntent().getStringExtra("query_type");
         branch = getIntent().getStringExtra("branch");
 
         Log.d(TAG, "查询参数 - queryType: " + queryType + ", branch: " + branch);
 
-        // 设置标题
+
         String title = "";
         switch (queryType) {
             case "unscanned_xiangma":
@@ -67,15 +67,15 @@ public class QueryResultActivity extends AppCompatActivity {
         }
         tvQueryTitle.setText(title);
 
-        // 初始化时隐藏记录数显示
+
         tvTotalCount.setVisibility(View.GONE);
 
-        // 设置RecyclerView
+
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new QueryResultAdapter(dataList, queryType);
         recyclerView.setAdapter(adapter);
 
-        // 加载数据
+
         loadData();
 
         btnBack.setOnClickListener(new View.OnClickListener() {
@@ -87,8 +87,7 @@ public class QueryResultActivity extends AppCompatActivity {
     }
 
     private void loadData() {
-        // 使用与您其他功能相同的服务器地址
-        String baseUrl = "http://192.168.17.121:5000"; // 请确认这是您的实际服务器IP
+        String baseUrl = "http://121.12.156.222:5000";
         String url = baseUrl + "/query/" + queryType;
 
         Log.d(TAG, "完整请求URL: " + url);

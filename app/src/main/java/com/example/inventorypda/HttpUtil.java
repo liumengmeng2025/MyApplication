@@ -9,7 +9,7 @@ import java.net.URL;
 
 public class HttpUtil {
     // 请根据你的服务器地址修改这个BASE_URL
-    public static final String BASE_URL = "http://121.12.156.222:5000"; // 替换为你的服务器IP和端口
+    public static final String BASE_URL = "http://121.12.156.222:5000";
 
     public static void sendHttpRequest(final String address, final String method,
                                        final String requestData, final HttpCallbackListener listener) {

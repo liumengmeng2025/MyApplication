@@ -48,8 +48,7 @@ public class ReceivingActivity extends AppCompatActivity {
     private MediaPlayer deleteSuccessSound;
     private MediaPlayer checkExistsSound;
     private MediaPlayer shanchuSuccessSound;
-    private MediaPlayer format_mismatch_sound; // 新增：格式不符提示音
-
+    private MediaPlayer format_mismatch_sound;
     private Handler handler = new Handler();
     private Runnable scanRunnable;
     private long lastInputTime = 0;
@@ -75,7 +74,7 @@ public class ReceivingActivity extends AppCompatActivity {
             deleteSuccessSound = MediaPlayer.create(this, R.raw.delete_success_sound);
             checkExistsSound = MediaPlayer.create(this, R.raw.dialog_sound);
             shanchuSuccessSound = MediaPlayer.create(this, R.raw.shanchu_success);
-            format_mismatch_sound = MediaPlayer.create(this, R.raw.format_mismatch_sound); // 新增：格式不符声音
+            format_mismatch_sound = MediaPlayer.create(this, R.raw.format_mismatch_sound);
         } catch (Exception e) {
             Log.e("SoundError", "无法加载声音文件", e);
         }

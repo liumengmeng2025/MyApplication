@@ -22,8 +22,8 @@ public class ApiClient {
     private static ApiClient instance;
     private RequestQueue requestQueue;
     private static Context ctx;
-    // 服务器IP和端口（根据实际情况修改）
-    private static final String BASE_URL = "http://192.168.17.121:5000";
+    // 服务器IP和端口
+    private static final String BASE_URL = "http://121.12.156.222:5000";
 
     // 回调接口
     public interface ApiResponseListener {
